@@ -1,0 +1,24 @@
+# Java and Maven build output
+target/
+build/
+*.class
+
+# Local environment and credentials
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Logs and operating system files
+*.log
+.DS_Store
+
+# IDE settings
+.idea/
+.vscode/
+*.iml
+*.swp
+
+# Maven wrapper downloaded runtime
+.mvn/wrapper/maven-wrapper.jar
