@@ -1,0 +1,16 @@
+I-ITSM Development Seed IDs (Supabase PostgreSQL)
+=================================================
+Sample Data used
+
+employees:
+- id = <emp1_id> : Sample Employee 1 (sample.emp1@example.test)
+- id = <emp2_id> : Sample Employee 2 (sample.emp2@example.test)
+
+technicians:
+- id = <tech1_id> : Sample Technician 1 (sample.tech1@example.test, domain: NETWORK)
+- id = <tech2_id> : Sample Technician 2 (sample.tech2@example.test, domain: HARDWARE)
+
+it_services:
+- id = 1 : Campus Wi-Fi (criticality: HIGH, active: true)
+- id = 2 : Student Portal (criticality: MEDIUM, active: true)
+- id = 3 : Printing Service (criticality: LOW, active: true)
