@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom';
 
 import { dateTime, label } from '../api';
 import { useApiData } from '../useApiData';
+import { useAutoRefresh } from '../useAutoRefresh';
 
 const transitions = {
   EMPLOYEE: { VERIFIED: 'Verify fix', CLOSED: 'Close incident', IN_PROGRESS: 'Reopen incident' },
@@ -33,6 +34,8 @@ export default function IncidentDetails({ request, account }) {
   const [failure, setFailure] = useState('');
   const [pending, setPending] = useState(false);
   const [comment, setComment] = useState('');
+
+  useAutoRefresh(() => refresh(), 30000);
 
   function refresh() {
     incident.reload();

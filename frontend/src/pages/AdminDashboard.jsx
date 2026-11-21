@@ -2,7 +2,10 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { dateTime, label } from '../api';
 import { useApiData } from '../useApiData';
+import { useAutoRefresh } from '../useAutoRefresh';
 import ActivityCard from './ActivityCard';
+import BarChart from './BarChart';
+import ColumnChart from './ColumnChart';
 import DashboardIcon from './DashboardIcon';
 
 const assignable = new Set(['CLASSIFIED', 'QUEUED', 'ASSIGNED']);
@@ -30,6 +33,19 @@ export default function AdminDashboard({ request }) {
   const audit = useApiData(request, '/audit?size=5');
   const outages = useApiData(request, '/outages');
   const atRisk = useApiData(request, '/sla/at-risk');
+  const [live, setLive] = useState(true);
+  const [updatedAt, setUpdatedAt] = useState(() => new Date());
+
+  function reloadAll() {
+    incidents.reload();
+    technicians.reload();
+    summary.reload();
+    audit.reload();
+    outages.reload();
+    atRisk.reload();
+    setUpdatedAt(new Date());
+  }
+  useAutoRefresh(reloadAll, 15000, live);
 
   async function assign(id, technicianId) {
     if (!technicianId) return;
@@ -51,7 +67,13 @@ export default function AdminDashboard({ request }) {
   const error = incidents.error || technicians.error || summary.error;
   return (
     <section className="itsm-panel">
-      <header className="admin-heading"><div><h1>Overview</h1><p>Incident activity and service performance.</p></div></header>
+      <header className="admin-heading"><div><h1>Overview</h1><p>Incident activity and service performance.</p></div>
+        <div className="itsm-live">
+          <label><input type="checkbox" checked={live} onChange={e => setLive(e.target.checked)} /> Live updates (every 15 s)</label>
+          <small>Updated {updatedAt.toLocaleTimeString()}</small>
+          <button type="button" className="itsm-button secondary" onClick={reloadAll}>Refresh</button>
+        </div>
+      </header>
       {(failure || error) && <p role="alert">{failure || error.message}</p>}
       {summary.data && <dl className="admin-stats itsm-facts">
         <div className="admin-stat-card"><dt><DashboardIcon name="laptop" />Total incidents</dt><dd>{summary.data.totalIncidents}</dd></div>
@@ -68,6 +90,19 @@ export default function AdminDashboard({ request }) {
         <div className="admin-stat-card"><dt><DashboardIcon name="check" />Average rating</dt>
           <dd>{summary.data.averageFeedbackRating == null ? '—' : `${summary.data.averageFeedbackRating}/5`}</dd></div>
       </dl>}
+      {summary.data && <section className="admin-panel">
+        <div className="admin-panel-heading"><h2>Analytics</h2></div>
+        <div className="itsm-chart-grid">
+          <ColumnChart title="Incidents reported, last 7 days" data={Object.entries(summary.data.createdPerDay)
+            .map(([day, value]) => ({ label: new Date(`${day}T00:00`).toLocaleDateString(undefined, { weekday: 'short' }), value }))} />
+          <BarChart title="By status" data={statuses.map(value => ({ label: label(value), value: summary.data.byStatus[value] ?? 0 }))} />
+          <BarChart title="By priority" data={priorities.map(value => ({ label: value, value: summary.data.byPriority[value] ?? 0 }))} />
+          <BarChart title="By category" data={categories.map(value => ({ label: label(value), value: summary.data.byCategory[value] ?? 0 }))
+            .sort((a, b) => b.value - a.value)} />
+          <BarChart title="By affected service" data={Object.entries(summary.data.byService ?? {})
+            .map(([service, value]) => ({ label: service, value }))} />
+        </div>
+      </section>}
       <div className="itsm-dashboard-grid">
         <section className="admin-panel">
           <div className="admin-panel-heading itsm-heading"><h2>Incident management</h2>
@@ -155,15 +190,6 @@ export default function AdminDashboard({ request }) {
           </tr>)}</tbody>
         </table></div>}
       </section>
-      {summary.data && Object.keys(summary.data.byService ?? {}).length > 0 && <section className="admin-panel">
-        <div className="admin-panel-heading"><h2>Incidents by service</h2></div>
-        <div className="admin-table-container itsm-table"><table>
-          <thead><tr><th>Service</th><th>Incidents</th></tr></thead>
-          <tbody>{Object.entries(summary.data.byService).map(([service, count]) => <tr key={service}>
-            <td>{service}</td><td>{count}</td>
-          </tr>)}</tbody>
-        </table></div>
-      </section>}
       <section className="admin-panel">
         <div className="admin-panel-heading"><h2>Technician workload</h2></div>
         {technicians.data?.length === 0 && <p className="itsm-panel-message">No technicians configured.</p>}

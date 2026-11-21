@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 
 import { dateTime, label } from '../api';
 import { useApiData } from '../useApiData';
+import { useAutoRefresh } from '../useAutoRefresh';
 import ActivityCard from './ActivityCard';
 import DashboardIcon from './DashboardIcon';
 
@@ -19,6 +20,11 @@ export default function MyIncidents({ request, account, overview = true }) {
   const unread = useApiData(request, overview ? '/notifications/unread-count' : null);
   const employee = account.role === 'EMPLOYEE';
   const { data, error, reload } = list;
+  useAutoRefresh(() => {
+    list.reload();
+    sla.reload();
+    unread.reload();
+  }, 30000);
   const title = employee ? 'My incidents' : 'Assigned incidents';
 
   return (

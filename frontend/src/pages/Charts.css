@@ -1,0 +1,79 @@
+/* Single-series charts. Bar colour: reference palette slot 1 for light surfaces,
+   validated against the white panel (lightness, chroma and >= 3:1 contrast). */
+.itsm-shell { --itsm-chart: #2a78d6; }
+
+.itsm-chart { margin: 0; padding: 1rem 1.25rem; }
+.itsm-chart figcaption { font-weight: 600; margin-bottom: .75rem; color: var(--itsm-text); }
+.itsm-chart-empty { color: var(--itsm-muted); margin: 0; }
+
+.itsm-bars, .itsm-columns { list-style: none; margin: 0; padding: 0; }
+
+.itsm-bars { display: grid; gap: 2px; }
+.itsm-bars li {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(6rem, 9rem) 1fr 2.5rem;
+  align-items: center;
+  gap: .6rem;
+  padding: .3rem 0;
+  border-radius: 4px;
+}
+.itsm-bar-label { color: var(--itsm-muted); font-size: .9em; overflow-wrap: anywhere; }
+.itsm-bar-track { height: 10px; }
+.itsm-bar-fill {
+  display: block;
+  height: 100%;
+  background: var(--itsm-chart, #2a78d6);
+  border-radius: 0 4px 4px 0; /* rounded data end, square at the baseline */
+}
+.itsm-bar-value { color: var(--itsm-text); font-variant-numeric: tabular-nums; text-align: right; }
+
+.itsm-columns { display: flex; align-items: stretch; gap: 2px; height: 10rem; }
+.itsm-columns li {
+  position: relative;
+  flex: 1;
+  display: grid;
+  grid-template-rows: 1.2rem 1fr auto;
+  justify-items: center;
+  min-width: 0;
+  border-radius: 4px;
+}
+.itsm-column-value { color: var(--itsm-text); font-size: .85em; font-variant-numeric: tabular-nums; }
+.itsm-column-track { width: 60%; max-width: 2.25rem; display: flex; align-items: flex-end; border-bottom: 1px solid var(--itsm-border); }
+.itsm-column-fill {
+  display: block;
+  width: 100%;
+  background: var(--itsm-chart, #2a78d6);
+  border-radius: 4px 4px 0 0;
+}
+.itsm-column-label { color: var(--itsm-muted); font-size: .75em; padding-top: .3rem; white-space: nowrap; }
+
+/* Hover/focus layer: the hit target is the whole row/column, larger than the mark. */
+.itsm-bars li:hover, .itsm-bars li:focus-visible,
+.itsm-columns li:hover, .itsm-columns li:focus-visible { background: var(--itsm-hover); outline: none; }
+.itsm-chart-tip {
+  position: absolute;
+  z-index: 2;
+  left: 50%;
+  bottom: calc(100% + 4px);
+  transform: translateX(-50%);
+  padding: .3rem .55rem;
+  border-radius: 4px;
+  background: var(--itsm-text);
+  color: var(--itsm-panel);
+  font-size: .8em;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity .12s;
+}
+li:hover > .itsm-chart-tip, li:focus-visible > .itsm-chart-tip { opacity: 1; }
+
+.itsm-chart-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr)); gap: 1rem; }
+
+@media (forced-colors: active) {
+  .itsm-bar-fill, .itsm-column-fill { background: CanvasText; }
+}
+
+.itsm-live { display: flex; flex-wrap: wrap; align-items: center; gap: .75rem; }
+.itsm-live small { color: var(--itsm-muted); }
