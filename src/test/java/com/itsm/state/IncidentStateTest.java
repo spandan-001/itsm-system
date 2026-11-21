@@ -29,11 +29,15 @@ class IncidentStateTest {
         Incident incident = TestData.incident(Priority.P2);
         incident.transitionTo(IncidentStatus.CLASSIFIED);
         incident.assignTo(tech);
-        for (IncidentStatus next : new IncidentStatus[] {IncidentStatus.ACKNOWLEDGED, IncidentStatus.IN_PROGRESS,
-                IncidentStatus.RESOLVED, IncidentStatus.VERIFIED, IncidentStatus.CLOSED}) {
+        incident.transitionTo(IncidentStatus.ACKNOWLEDGED);
+        incident.transitionTo(IncidentStatus.IN_PROGRESS);
+        incident.provideResolution("Restarted the access point", "ravi@example.test");
+        for (IncidentStatus next : new IncidentStatus[] {IncidentStatus.RESOLVED, IncidentStatus.VERIFIED,
+                IncidentStatus.CLOSED}) {
             incident.transitionTo(next);
         }
         assertThat(incident.getStatus()).isEqualTo(IncidentStatus.CLOSED);
+        assertThat(incident.getClosedAt()).isNotNull();
         assertThat(incident.getAllowedTransitions()).isEmpty();
     }
 
@@ -66,6 +70,27 @@ class IncidentStateTest {
 
         assertThatThrownBy(() -> incident.assignTo(tech)).isInstanceOf(InvalidStateTransitionException.class);
         assertThat(incident.getAssignedTechnician()).isNull();
+    }
+
+    @Test
+    void resolvingNeedsASummaryAndReopeningClearsIt() {
+        Incident incident = TestData.incident(Priority.P2);
+        incident.transitionTo(IncidentStatus.CLASSIFIED);
+        incident.assignTo(tech);
+        incident.transitionTo(IncidentStatus.ACKNOWLEDGED);
+        incident.transitionTo(IncidentStatus.IN_PROGRESS);
+
+        assertThatThrownBy(() -> incident.transitionTo(IncidentStatus.RESOLVED))
+                .isInstanceOf(InvalidStateTransitionException.class)
+                .hasMessageContaining("resolution summary is required");
+
+        incident.provideResolution("Replaced the cable", "ravi@example.test");
+        incident.transitionTo(IncidentStatus.RESOLVED);
+        incident.transitionTo(IncidentStatus.IN_PROGRESS); // reopened
+
+        assertThat(incident.getResolutionSummary()).isNull();
+        assertThatThrownBy(() -> incident.transitionTo(IncidentStatus.RESOLVED))
+                .isInstanceOf(InvalidStateTransitionException.class);
     }
 
     @Test

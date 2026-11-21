@@ -90,9 +90,13 @@ public class DemoDataSeeder implements ApplicationRunner {
                 IncidentCategory.DATABASE, Impact.MEDIUM, Urgency.MEDIUM, neha, library);
 
         advance(wifiDown, IncidentStatus.ACKNOWLEDGED, IncidentStatus.IN_PROGRESS);
-        advance(portalSlow, IncidentStatus.ACKNOWLEDGED, IncidentStatus.IN_PROGRESS, IncidentStatus.RESOLVED);
-        advance(printer, IncidentStatus.ACKNOWLEDGED, IncidentStatus.IN_PROGRESS, IncidentStatus.RESOLVED,
-                IncidentStatus.VERIFIED, IncidentStatus.CLOSED);
+        advance(portalSlow, IncidentStatus.ACKNOWLEDGED, IncidentStatus.IN_PROGRESS);
+        incidentService.updateStatus(portalSlow.getId(), IncidentStatus.RESOLVED,
+                "Added a database index on the registration table; page loads are under 2 seconds again.");
+        advance(printer, IncidentStatus.ACKNOWLEDGED, IncidentStatus.IN_PROGRESS);
+        incidentService.updateStatus(printer.getId(), IncidentStatus.RESOLVED,
+                "Replaced the worn pickup roller and cleared the paper path.");
+        advance(printer, IncidentStatus.VERIFIED, IncidentStatus.CLOSED);
 
         log.info("Seeded demo data: {} services, {} employees, {} technicians, {} incidents",
                 services.count(), employees.count(), technicians.count(), 6);

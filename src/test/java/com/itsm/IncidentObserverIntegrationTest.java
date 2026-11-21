@@ -52,10 +52,11 @@ class IncidentObserverIntegrationTest extends IntegrationTestSupport {
         Long id = reportWifiOutage().getId();
         for (IncidentStatus next : List.of(IncidentStatus.ACKNOWLEDGED, IncidentStatus.IN_PROGRESS,
                 IncidentStatus.RESOLVED, IncidentStatus.VERIFIED, IncidentStatus.CLOSED)) {
-            incidentService.updateStatus(id, next);
+            incidentService.updateStatus(id, next, next == IncidentStatus.RESOLVED ? "Restarted the access point" : null);
         }
 
-        assertThat(auditService.trailFor(id)).extracting(AuditLog::getToStatus).containsExactly(
+        assertThat(auditService.trailFor(id)).filteredOn(l -> l.getToStatus() != null)
+                .extracting(AuditLog::getToStatus).containsExactly(
                 IncidentStatus.NEW, IncidentStatus.CLASSIFIED, IncidentStatus.ASSIGNED,
                 IncidentStatus.ACKNOWLEDGED, IncidentStatus.IN_PROGRESS, IncidentStatus.RESOLVED,
                 IncidentStatus.VERIFIED, IncidentStatus.CLOSED);
@@ -101,7 +102,7 @@ class IncidentObserverIntegrationTest extends IntegrationTestSupport {
         Long id = reportWifiOutage().getId();
         incidentService.updateStatus(id, IncidentStatus.ACKNOWLEDGED);
         incidentService.updateStatus(id, IncidentStatus.IN_PROGRESS);
-        incidentService.updateStatus(id, IncidentStatus.RESOLVED);
+        incidentService.updateStatus(id, IncidentStatus.RESOLVED, "Restarted the access point");
         assertThat(incidentService.getIncident(id).getResolvedAt()).isNotNull();
 
         incidentService.updateStatus(id, IncidentStatus.IN_PROGRESS); // verification failed

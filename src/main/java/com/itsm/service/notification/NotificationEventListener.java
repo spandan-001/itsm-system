@@ -10,7 +10,11 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
+import com.itsm.enums.IncidentStatus;
 import com.itsm.event.DuplicateLinkEvent;
+import com.itsm.event.FeedbackReceivedEvent;
+import com.itsm.event.IncidentNoteAddedEvent;
+import com.itsm.event.SlaWarningEvent;
 import com.itsm.event.IncidentAssignedEvent;
 import com.itsm.event.IncidentCreatedEvent;
 import com.itsm.event.IncidentEvent;
@@ -66,7 +70,16 @@ public class NotificationEventListener {
             case IncidentStatusChangedEvent changed -> {
                 String text = "\"" + incident.getTitle() + "\" moved from " + changed.getFromStatus()
                         + " to " + changed.getToStatus() + ".";
+                if (changed.getToStatus() == IncidentStatus.RESOLVED) {
+                    text += " Resolution: " + incident.getResolutionSummary()
+                            + " Please verify the fix, or reopen the incident if the problem continues.";
+                }
                 messages.add(new Message(reporter, ref + " is now " + changed.getToStatus(), text));
+                if (changed.getFromStatus() == IncidentStatus.RESOLVED
+                        && changed.getToStatus() == IncidentStatus.IN_PROGRESS && technician != null) {
+                    messages.add(new Message(technician, ref + " reopened",
+                            "The reporter says \"" + incident.getTitle() + "\" is not fixed yet."));
+                }
                 // People whose reports were merged into this one follow its progress too.
                 for (Incident duplicate : incidentRepository.findByDuplicateOf_Id(incident.getId())) {
                     messages.add(new Message(Recipient.of(duplicate.getReporter()),
@@ -82,6 +95,33 @@ public class NotificationEventListener {
                                     + ", which is already being handled."
                                     + " You will be updated as it progresses."
                             : "Your report is now tracked on its own with priority " + incident.getPriority() + "."));
+            case IncidentNoteAddedEvent added -> {
+                var note = added.getNote();
+                switch (note.getType()) {
+                    case INFO_REQUEST -> messages.add(new Message(reporter, ref + ": more information needed",
+                            note.getAuthorName() + " asks: " + note.getBody()));
+                    case INFO_RESPONSE, ADDITIONAL_INFO -> {
+                        if (technician != null) {
+                            messages.add(new Message(technician, ref + ": reporter added information",
+                                    note.getAuthorName() + " wrote: " + note.getBody()));
+                        }
+                    }
+                    default -> { } // investigation notes are internal; the rest ride on status changes
+                }
+            }
+            case SlaWarningEvent warning -> {
+                if (technician != null) {
+                    messages.add(new Message(technician, ref + " SLA at risk",
+                            warning.getSlaType() + " deadline for \"" + incident.getTitle() + "\" ("
+                                    + incident.getPriority() + ") is " + warning.getDeadline() + "."));
+                }
+            }
+            case FeedbackReceivedEvent feedback -> {
+                if (technician != null) {
+                    messages.add(new Message(technician, ref + " feedback: " + incident.getFeedbackRating() + "/5",
+                            feedback.describe()));
+                }
+            }
             case SlaBreachedEvent breached -> {
                 String text = breached.getSlaType() + " SLA for \"" + incident.getTitle() + "\" ("
                         + incident.getPriority() + ") was breached. Deadline: " + breached.getDeadline() + ".";

@@ -75,6 +75,23 @@ Strategies can be switched live, which is handy in the demo: `PUT /api/strategie
 | `PUT /api/strategies/priority/{name}` | `weighted` or `matrix` |
 | `PUT /api/strategies/assignment/{name}` | `skill`, `load` or `smart` |
 
+### Investigation, resolution and feedback
+
+| Method and path | Who | Purpose |
+| --- | --- | --- |
+| `GET /api/incidents/{id}/notes` | anyone who can see the incident | The thread, oldest first. Employees don't see `INVESTIGATION` notes |
+| `POST /api/incidents/{id}/notes` | see below | `{"type": "INFO_REQUEST", "body": "Which floor are you on?"}` |
+| `PATCH /api/incidents/{id}/status` | role rules below | `{"status": "RESOLVED", "comment": "Rebooted AP-3"}`. `comment` is **required** for `RESOLVED` (the resolution summary), is the reason when reopening, and otherwise becomes a note |
+| `POST /api/incidents/{id}/feedback` | the reporter | `{"rating": 4, "comment": "Quick fix"}`, once, after the incident is resolved |
+
+Note types: employees post `ADDITIONAL_INFO` and `INFO_RESPONSE`; technicians and admins post `INVESTIGATION` (internal) and `INFO_REQUEST`. `RESOLUTION`, `REOPEN_REASON` and `STATUS_COMMENT` are written by the system. An `INFO_REQUEST` sets `awaitingReporterInfo` on the incident until the reporter replies.
+
+Status rules by role: employees `VERIFIED`, `CLOSED`, and reopen (`RESOLVED → IN_PROGRESS`); technicians `ACKNOWLEDGED`, `IN_PROGRESS`, `RESOLVED`; admins any move the state machine allows. Admins without a linked account get role `ADMIN` from `/api/me` and can open every incident.
+
+New incident fields: `awaitingReporterInfo`, `resolutionSummary`, `resolvedBy`, `closedAt`, `feedbackRating`, `feedbackComment`, `feedbackAt`, `responseWarned`, `resolutionWarned`.
+New search filters: `incidentId`, `awaitingInfo`. New analytics: `byService`, `criticalOpenIncidents`, `resolvedIncidents`, `awaitingReporterInfo`, `averageFeedbackRating`.
+The SLA monitor also sends an "SLA at risk" warning once 75% of a deadline's window has passed (`POST /api/sla/check` runs it now). Manually assigning a technician who already has 5 open incidents returns 409 (`TechnicianWorkloadExceededException`).
+
 Audit, notification and SLA endpoints are in [audit-notifications-sla.md](audit-notifications-sla.md).
 
 Errors use RFC 9457 problem JSON: `400` validation (with an `errors` map), `404` not found, `409` business-rule conflicts (an invalid transition includes `from`, `to` and `allowedTransitions`).

@@ -20,9 +20,10 @@ public class SlaMonitor {
     @Scheduled(initialDelayString = "${itsm.sla.initial-delay-ms:30000}",
                fixedDelayString = "${itsm.sla.check-interval-ms:60000}")
     public void checkForBreaches() {
+        int warnings = slaService.detectWarnings();
         int breaches = slaService.detectBreaches();
-        if (breaches > 0) {
-            log.warn("SLA monitor flagged {} new breach(es)", breaches);
+        if (warnings > 0 || breaches > 0) {
+            log.warn("SLA monitor raised {} warning(s) and {} breach(es)", warnings, breaches);
         }
     }
 }

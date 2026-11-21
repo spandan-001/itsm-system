@@ -54,6 +54,6 @@ public class SlaController {
     /** Runs breach detection now instead of waiting for the scheduler (handy for demos). */
     @PostMapping("/api/sla/check")
     public Map<String, Integer> checkNow() {
-        return Map.of("newBreaches", slaService.detectBreaches());
+        return Map.of("newWarnings", slaService.detectWarnings(), "newBreaches", slaService.detectBreaches());
     }
 }

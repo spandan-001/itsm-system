@@ -18,9 +18,11 @@ import com.itsm.repository.AccountLinkRepository;
 public class AccountService {
 
     private final AccountLinkRepository accountLinks;
+    private final AdminAccess admins;
 
-    public AccountService(AccountLinkRepository accountLinks) {
+    public AccountService(AccountLinkRepository accountLinks, AdminAccess admins) {
         this.accountLinks = accountLinks;
+        this.admins = admins;
     }
 
     @Transactional(readOnly = true)
@@ -42,11 +44,23 @@ public class AccountService {
         if (authentication == null || !(authentication.getPrincipal() instanceof Jwt jwt)) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Sign in to continue");
         }
-        return requireLinkedAccount(UUID.fromString(jwt.getSubject()));
+        UUID userId = UUID.fromString(jwt.getSubject());
+        var linked = findLinkedAccount(userId);
+        if (linked.isPresent()) {
+            return linked.get();
+        }
+        if (admins.allows(jwt.getSubject())) {
+            String email = jwt.getClaimAsString("email");
+            return new LinkedAccount(Role.ADMIN, null, email == null ? jwt.getSubject() : email);
+        }
+        return requireLinkedAccount(userId);
     }
 
     public record LinkedAccount(Role role, Long id, String email) {
         public boolean canView(Incident incident) {
+            if (role == Role.ADMIN) {
+                return true; // administrators monitor every incident
+            }
             if (role == Role.EMPLOYEE) {
                 return id.equals(incident.getReporter().getId());
             }

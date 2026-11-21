@@ -4,6 +4,7 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.util.EnumMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -66,18 +67,30 @@ public class AnalyticsService {
         }
         all.forEach(i -> perDay.computeIfPresent(i.getCreatedAt().toLocalDate(), (day, n) -> n + 1));
 
+        long criticalOpen = all.stream()
+                .filter(i -> i.getPriority() == Priority.P1 && !i.isDuplicate()
+                        && !IncidentStates.closedStatuses().contains(i.getStatus()))
+                .count();
+        var ratings = all.stream().filter(i -> i.getFeedbackRating() != null)
+                .mapToInt(Incident::getFeedbackRating).summaryStatistics();
+
         return new AnalyticsSummary(
                 all.size(),
                 open,
                 all.stream().filter(i -> i.getStatus() == IncidentStatus.QUEUED).count(),
                 all.stream().filter(Incident::isDuplicate).count(),
                 breached,
+                criticalOpen,
+                resolved.size(),
+                all.stream().filter(Incident::isAwaitingReporterInfo).count(),
+                ratings.getCount() == 0 ? null : round(ratings.getAverage()),
                 compliance,
                 resolved.isEmpty() ? null
                         : round(resolved.stream().mapToLong(AnalyticsService::resolutionMinutes).average().orElse(0)),
                 countBy(all, Incident::getStatus, IncidentStatus.class),
                 countBy(all, Incident::getPriority, Priority.class),
                 countBy(all, Incident::getCategory, IncidentCategory.class),
+                byService(all),
                 mttrByPriority,
                 perDay,
                 technicianStats(all));
@@ -93,6 +106,18 @@ public class AnalyticsService {
             return new AnalyticsSummary.TechnicianStats(t.getId(), t.getName(), t.isAvailable(), t.getSkills(),
                     active, done);
         }).toList();
+    }
+
+    /** Incidents per affected IT service, busiest first ("service analysis"). */
+    private static Map<String, Long> byService(List<Incident> incidents) {
+        Map<String, Long> counts = incidents.stream()
+                .flatMap(i -> i.getAffectedServices().stream())
+                .collect(Collectors.groupingBy(s -> s.getName(), Collectors.counting()));
+        Map<String, Long> sorted = new LinkedHashMap<>();
+        counts.entrySet().stream()
+                .sorted(Map.Entry.<String, Long>comparingByValue().reversed().thenComparing(Map.Entry.comparingByKey()))
+                .forEach(e -> sorted.put(e.getKey(), e.getValue()));
+        return sorted;
     }
 
     /** Counts per enum value, including zeros so charts always show every bar. */

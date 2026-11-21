@@ -55,6 +55,8 @@ public class AccountLink {
 
     public enum Role {
         EMPLOYEE,
-        TECHNICIAN
+        TECHNICIAN,
+        /** Approved through configuration; never stored as an account link. */
+        ADMIN
     }
 }

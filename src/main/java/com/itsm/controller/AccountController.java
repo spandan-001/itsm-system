@@ -34,7 +34,7 @@ public class AccountController {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "This Supabase user is not linked to an ITSM account");
         }
         return new AccountResponse(userId, jwt.getClaimAsString("email"),
-                account.map(AccountService.LinkedAccount::role).orElse(null),
+                account.map(AccountService.LinkedAccount::role).orElse(admin ? Role.ADMIN : null),
                 account.map(AccountService.LinkedAccount::id).orElse(null), admin);
     }
 

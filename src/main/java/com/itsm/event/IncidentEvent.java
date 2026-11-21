@@ -17,7 +17,7 @@ import com.itsm.model.Incident;
 public abstract sealed class IncidentEvent
         permits IncidentCreatedEvent, IncidentAssignedEvent,
                 IncidentStatusChangedEvent, SlaBreachedEvent,
-                DuplicateLinkEvent {
+                DuplicateLinkEvent, IncidentNoteAddedEvent, SlaWarningEvent, FeedbackReceivedEvent {
 
     public static final String SYSTEM_ACTOR = "system";
 

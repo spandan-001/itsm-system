@@ -84,6 +84,31 @@ public class Incident {
 
     private Double duplicateScore;
 
+    // Investigation, resolution, closure and feedback
+    @Column(nullable = false)
+    private boolean awaitingReporterInfo;
+
+    @Column(length = 2000)
+    private String resolutionSummary;
+
+    private String resolvedBy;
+
+    private LocalDateTime closedAt;
+
+    private Integer feedbackRating;
+
+    @Column(length = 1000)
+    private String feedbackComment;
+
+    private LocalDateTime feedbackAt;
+
+    // SLA early warnings, sent once per clock
+    @Column(nullable = false)
+    private boolean responseWarned;
+
+    @Column(nullable = false)
+    private boolean resolutionWarned;
+
     // SLA tracking (set by SlaService, never directly by callers)
     private LocalDateTime responseDueAt;
 
@@ -216,7 +241,16 @@ public class Incident {
      */
     public void transitionTo(IncidentStatus target) {
         currentState().validateTransition(this, target);
+        IncidentStatus from = this.status;
         this.status = target;
+        if (from == IncidentStatus.RESOLVED && target == IncidentStatus.IN_PROGRESS) {
+            // Reopened: the old resolution did not work; a new one is needed next time.
+            this.resolutionSummary = null;
+            this.resolvedBy = null;
+        }
+        if (target == IncidentStatus.CLOSED) {
+            this.closedAt = LocalDateTime.now();
+        }
     }
 
     /**
@@ -364,5 +398,87 @@ public class Incident {
 
     public Double getDuplicateScore() {
         return duplicateScore;
+    }
+
+    // Investigation, resolution and feedback behaviour
+
+    /** Records how the incident was fixed. Required before moving to RESOLVED. */
+    public void provideResolution(String summary, String resolvedBy) {
+        if (summary == null || summary.isBlank()) {
+            throw new IllegalArgumentException("A resolution summary is required");
+        }
+        this.resolutionSummary = summary.trim();
+        this.resolvedBy = resolvedBy;
+    }
+
+    public void requestInfoFromReporter() {
+        this.awaitingReporterInfo = true;
+    }
+
+    public void reporterInfoReceived() {
+        this.awaitingReporterInfo = false;
+    }
+
+    /**
+     * The reporter's rating (1-5) of the resolution, given once after it is resolved.
+     * @throws com.itsm.exception.BusinessRuleException if it is too early or already given
+     */
+    public void recordFeedback(int rating, String comment) {
+        if (rating < 1 || rating > 5) {
+            throw new IllegalArgumentException("Rating must be between 1 and 5");
+        }
+        if (status != IncidentStatus.RESOLVED && status != IncidentStatus.VERIFIED && status != IncidentStatus.CLOSED) {
+            throw new com.itsm.exception.BusinessRuleException("Feedback can be given once the incident is resolved");
+        }
+        if (feedbackRating != null) {
+            throw new com.itsm.exception.BusinessRuleException("Feedback has already been given for this incident");
+        }
+        this.feedbackRating = rating;
+        this.feedbackComment = (comment == null || comment.isBlank()) ? null : comment.trim();
+        this.feedbackAt = LocalDateTime.now();
+    }
+
+    public void markResponseWarned() {
+        responseWarned = true;
+    }
+
+    public void markResolutionWarned() {
+        resolutionWarned = true;
+    }
+
+    public boolean isAwaitingReporterInfo() {
+        return awaitingReporterInfo;
+    }
+
+    public String getResolutionSummary() {
+        return resolutionSummary;
+    }
+
+    public String getResolvedBy() {
+        return resolvedBy;
+    }
+
+    public LocalDateTime getClosedAt() {
+        return closedAt;
+    }
+
+    public Integer getFeedbackRating() {
+        return feedbackRating;
+    }
+
+    public String getFeedbackComment() {
+        return feedbackComment;
+    }
+
+    public LocalDateTime getFeedbackAt() {
+        return feedbackAt;
+    }
+
+    public boolean isResponseWarned() {
+        return responseWarned;
+    }
+
+    public boolean isResolutionWarned() {
+        return resolutionWarned;
     }
 }

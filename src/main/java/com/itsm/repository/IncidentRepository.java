@@ -29,6 +29,16 @@ public interface IncidentRepository extends JpaRepository<Incident, Long>, JpaSp
 
     List<Incident> findByResponseBreachedTrueOrResolutionBreachedTrue();
 
+    /** Incidents with an open SLA clock that has not been warned about or breached yet. */
+    @Query("""
+            select i.id from Incident i
+            where (i.respondedAt is null and i.responseDueAt is not null
+                   and i.responseWarned = false and i.responseBreached = false)
+               or (i.resolvedAt is null and i.resolutionDueAt is not null
+                   and i.resolutionWarned = false and i.resolutionBreached = false)
+            order by i.id""")
+    List<Long> findWarningCandidateIds();
+
     // Routing
     List<Incident> findByStatusOrderByCreatedAtAsc(IncidentStatus status);
 

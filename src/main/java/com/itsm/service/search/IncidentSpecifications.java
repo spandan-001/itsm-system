@@ -18,6 +18,9 @@ public final class IncidentSpecifications {
     }
 
     public static Specification<Incident> visibleTo(LinkedAccount account) {
+        if (account.role() == Role.ADMIN) {
+            return (root, query, cb) -> cb.conjunction();
+        }
         String owner = account.role() == Role.EMPLOYEE ? "reporter" : "assignedTechnician";
         return (root, query, cb) -> cb.equal(root.get(owner).get("id"), account.id());
     }
@@ -30,6 +33,12 @@ public final class IncidentSpecifications {
             }
             if (c.priority() != null && !c.priority().isEmpty()) {
                 where.add(root.get("priority").in(c.priority()));
+            }
+            if (c.incidentId() != null) {
+                where.add(cb.equal(root.get("id"), c.incidentId()));
+            }
+            if (c.awaitingInfo() != null) {
+                where.add(cb.equal(root.get("awaitingReporterInfo"), c.awaitingInfo()));
             }
             if (c.category() != null) {
                 where.add(cb.equal(root.get("category"), c.category()));

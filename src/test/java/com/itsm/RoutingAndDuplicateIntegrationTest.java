@@ -109,13 +109,13 @@ class RoutingAndDuplicateIntegrationTest extends IntegrationTestSupport {
                 Impact.LOW, Urgency.LOW);
 
         var p1Network = new IncidentSearchCriteria(null, java.util.List.of(Priority.P1), IncidentCategory.NETWORK,
-                null, reporter.getId(), wifi.getId(), null, null, "LIBRARY", false, false, null);
+                null, reporter.getId(), wifi.getId(), null, null, "LIBRARY", false, false, null, null, null);
         assertThat(searchService.search(p1Network, PageRequest.of(0, 10)).getContent())
                 .extracting(Incident::getTitle).containsExactly("Wi-Fi down in library");
 
         // No hardware technician exists, so smart routing falls back to Ravi for this P4.
         var ravisHardware = new IncidentSearchCriteria(java.util.List.of(IncidentStatus.ASSIGNED), null,
-                IncidentCategory.HARDWARE, networkTech.getId(), null, null, null, null, null, null, null, null);
+                IncidentCategory.HARDWARE, networkTech.getId(), null, null, null, null, null, null, null, null, null, null);
         assertThat(searchService.search(ravisHardware, PageRequest.of(0, 10)).getContent())
                 .extracting(Incident::getTitle).containsExactly("Printer offline");
     }
@@ -126,7 +126,7 @@ class RoutingAndDuplicateIntegrationTest extends IntegrationTestSupport {
         report("Printer offline", "Second floor printer is offline", IncidentCategory.HARDWARE, Impact.LOW, Urgency.LOW);
         incidentService.updateStatus(id, IncidentStatus.ACKNOWLEDGED);
         incidentService.updateStatus(id, IncidentStatus.IN_PROGRESS);
-        incidentService.updateStatus(id, IncidentStatus.RESOLVED);
+        incidentService.updateStatus(id, IncidentStatus.RESOLVED, "Restarted the access point");
 
         AnalyticsSummary summary = analyticsService.summary();
 
