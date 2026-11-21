@@ -12,6 +12,9 @@ import com.itsm.enums.IncidentCategory;
 import com.itsm.enums.Impact;
 import com.itsm.enums.Urgency;
 import com.itsm.enums.IncidentStatus;
+import com.itsm.state.IncidentState;
+import com.itsm.state.IncidentStates;
+import java.util.Set;
 
 @Entity
 @Table(name = "incidents")
@@ -73,7 +76,29 @@ public class Incident {
         inverseJoinColumns = @JoinColumn(name = "service_id")
     )
     private List<ITService> affectedServices = new ArrayList<>();
-    
+
+    // Duplicate detection: a duplicate points at the original (root) incident
+    @ManyToOne
+    @JoinColumn(name = "duplicate_of_id")
+    private Incident duplicateOf;
+
+    private Double duplicateScore;
+
+    // SLA tracking (set by SlaService, never directly by callers)
+    private LocalDateTime responseDueAt;
+
+    private LocalDateTime resolutionDueAt;
+
+    private LocalDateTime respondedAt;
+
+    private LocalDateTime resolvedAt;
+
+    @Column(nullable = false)
+    private boolean responseBreached;
+
+    @Column(nullable = false)
+    private boolean resolutionBreached;
+
 
     // Required by JPA
     protected Incident() {
@@ -169,8 +194,50 @@ public class Incident {
         return status;
     }
 
-    public void setStatus(IncidentStatus status) {
-        this.status = status;
+    // Lifecycle (State pattern). Status changes only go through these methods.
+
+    /** The state object for the current status. Not a bean getter, so it is not serialised. */
+    public IncidentState currentState() {
+        return IncidentStates.of(status);
+    }
+
+    /** Statuses this incident may move to next (handy for UI buttons). */
+    public Set<IncidentStatus> getAllowedTransitions() {
+        return currentState().allowedNext();
+    }
+
+    public String getStatusDescription() {
+        return currentState().description();
+    }
+
+    /**
+     * Moves to {@code target} if the current state allows it.
+     * @throws com.itsm.exception.InvalidStateTransitionException otherwise
+     */
+    public void transitionTo(IncidentStatus target) {
+        currentState().validateTransition(this, target);
+        this.status = target;
+    }
+
+    /**
+     * Assigns (or, while still ASSIGNED, reassigns) a technician and moves to ASSIGNED.
+     * @throws com.itsm.exception.InvalidStateTransitionException if the state forbids it
+     */
+    public void assignTo(Technician technician) {
+        if (technician == null) {
+            throw new IllegalArgumentException("Technician is required");
+        }
+        Technician previous = this.assignedTechnician;
+        this.assignedTechnician = technician;
+        if (status == IncidentStatus.ASSIGNED) {
+            return; // reassignment before acknowledgement
+        }
+        try {
+            transitionTo(IncidentStatus.ASSIGNED);
+        } catch (RuntimeException ex) {
+            this.assignedTechnician = previous;
+            throw ex;
+        }
     }
 
     public LocalDateTime getCreatedAt() {
@@ -189,9 +256,6 @@ public class Incident {
         return assignedTechnician;
     }
 
-    public void setAssignedTechnician(Technician assignedTechnician) {
-        this.assignedTechnician = assignedTechnician;
-    }
 
     public List<ITService> getAffectedServices() {
         return affectedServices;
@@ -201,5 +265,104 @@ public class Incident {
         this.affectedServices = affectedServices == null
                 ? new ArrayList<>()
                 : new ArrayList<>(affectedServices);
+    }
+
+    // SLA behaviour
+
+    public void applySlaDeadlines(LocalDateTime responseDueAt, LocalDateTime resolutionDueAt) {
+        this.responseDueAt = responseDueAt;
+        this.resolutionDueAt = resolutionDueAt;
+    }
+
+    /** Records the first response. Returns true if it came after the deadline. */
+    public boolean recordResponse(LocalDateTime at) {
+        if (respondedAt != null) {
+            return false;
+        }
+        respondedAt = at;
+        return responseDueAt != null && at.isAfter(responseDueAt);
+    }
+
+    /** Records the resolution. Returns true if it came after the deadline. */
+    public boolean recordResolution(LocalDateTime at) {
+        if (resolvedAt != null) {
+            return false;
+        }
+        resolvedAt = at;
+        return resolutionDueAt != null && at.isAfter(resolutionDueAt);
+    }
+
+    public void markResponseBreached() {
+        responseBreached = true;
+    }
+
+    public void markResolutionBreached() {
+        resolutionBreached = true;
+    }
+
+    public LocalDateTime getResponseDueAt() {
+        return responseDueAt;
+    }
+
+    public LocalDateTime getResolutionDueAt() {
+        return resolutionDueAt;
+    }
+
+    public LocalDateTime getRespondedAt() {
+        return respondedAt;
+    }
+
+    public LocalDateTime getResolvedAt() {
+        return resolvedAt;
+    }
+
+    public boolean isResponseBreached() {
+        return responseBreached;
+    }
+
+    public boolean isResolutionBreached() {
+        return resolutionBreached;
+    }
+
+    /** Reopening a resolved incident restarts the resolution clock. */
+    public void clearResolution() {
+        resolvedAt = null;
+    }
+
+    // Duplicate behaviour
+
+    /** Links this incident to an original. Always links to the root, never to another duplicate. */
+    public void markDuplicateOf(Incident original, double score) {
+        if (original == null) {
+            throw new IllegalArgumentException("Original incident is required");
+        }
+        Incident root = original.duplicateOf != null ? original.duplicateOf : original;
+        if (root == this || (id != null && id.equals(root.getId()))) {
+            throw new IllegalArgumentException("An incident cannot duplicate itself");
+        }
+        this.duplicateOf = root;
+        this.duplicateScore = score;
+    }
+
+    public void clearDuplicate() {
+        this.duplicateOf = null;
+        this.duplicateScore = null;
+    }
+
+    public boolean isDuplicate() {
+        return duplicateOf != null;
+    }
+
+    /** The original incident, or null. Not a bean getter, so JSON shows only the id. */
+    public Incident duplicateParent() {
+        return duplicateOf;
+    }
+
+    public Long getDuplicateOfId() {
+        return duplicateOf == null ? null : duplicateOf.getId();
+    }
+
+    public Double getDuplicateScore() {
+        return duplicateScore;
     }
 }
