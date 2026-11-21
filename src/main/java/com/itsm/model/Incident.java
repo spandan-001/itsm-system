@@ -73,6 +73,7 @@ public class Incident {
         inverseJoinColumns = @JoinColumn(name = "service_id")
     )
     private List<ITService> affectedServices = new ArrayList<>();
+    
 
     // Required by JPA
     protected Incident() {
