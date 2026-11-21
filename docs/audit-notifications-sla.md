@@ -49,8 +49,8 @@ SLA states: `ON_TRACK`, `AT_RISK` (75% of the window used), `BREACHED`, `MET`, `
 Incident responses now also include `responseDueAt`, `resolutionDueAt`, `respondedAt`, `resolvedAt`, `responseBreached` and `resolutionBreached`.
 
 Send a Supabase bearer token. The inbox uses the email from the linked ITSM
-account. Audit rows record the signed-in user's Supabase UUID or `system` for
-background actions. Global audit, SLA breach lists, manual SLA checks, and SLA
+account. Audit rows record the signed-in user's linked ITSM email (an
+administrator's sign-in email) or `system` for background actions. Global audit, SLA breach lists, manual SLA checks, and SLA
 policy changes require administrative access. See the [API handoff](incident-api.md).
 
 ## Schema changes (for the Supabase schema)

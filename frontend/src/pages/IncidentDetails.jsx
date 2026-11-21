@@ -5,8 +5,12 @@ import { dateTime, label } from '../api';
 import { useApiData } from '../useApiData';
 
 const transitions = {
-  EMPLOYEE: { VERIFIED: 'Verify fix', CLOSED: 'Close incident' },
+  EMPLOYEE: { VERIFIED: 'Verify fix', CLOSED: 'Close incident', IN_PROGRESS: 'Reopen incident' },
   TECHNICIAN: { ACKNOWLEDGED: 'Acknowledge', IN_PROGRESS: 'Start work', RESOLVED: 'Resolve' },
+  ADMIN: {
+    ACKNOWLEDGED: 'Acknowledge', IN_PROGRESS: 'Start work', RESOLVED: 'Resolve',
+    VERIFIED: 'Verify fix', CLOSED: 'Close incident',
+  },
 };
 
 export default function IncidentDetails({ request, account }) {
@@ -17,6 +21,7 @@ export default function IncidentDetails({ request, account }) {
   const audit = useApiData(request, incident.data ? path + '/audit' : null);
   const [failure, setFailure] = useState('');
   const [pending, setPending] = useState(false);
+  const [comment, setComment] = useState('');
 
   function refresh() {
     incident.reload();
@@ -28,7 +33,9 @@ export default function IncidentDetails({ request, account }) {
     setPending(true);
     setFailure('');
     try {
-      await request(path + '/status', { method: 'PATCH', body: { status } });
+      const text = comment.trim();
+      await request(path + '/status', { method: 'PATCH', body: text ? { status, comment: text } : { status } });
+      setComment('');
       refresh();
     } catch (error) {
       setFailure(error.message);
@@ -41,7 +48,11 @@ export default function IncidentDetails({ request, account }) {
   if (!incident.data) return <p role="status">Loading incident…</p>;
   const item = incident.data;
   const actions = transitions[account.role] ?? {};
-  const allowed = item.allowedTransitions?.filter(status => actions[status]) ?? [];
+  // Employees may only move to IN_PROGRESS by reopening a resolved incident.
+  const allowed = item.allowedTransitions?.filter(status => actions[status]
+    && (status !== 'IN_PROGRESS' || account.role !== 'EMPLOYEE' || item.status === 'RESOLVED')) ?? [];
+  const canResolve = allowed.includes('RESOLVED');
+  const canReopen = item.status === 'RESOLVED' && allowed.includes('IN_PROGRESS');
 
   return (
     <article className="itsm-panel">
@@ -54,10 +65,16 @@ export default function IncidentDetails({ request, account }) {
         <div><dt>Status</dt><dd>{label(item.status)}</dd></div>
         <div><dt>Technician</dt><dd>{item.assignedTechnician?.name ?? 'Unassigned'}</dd></div>
         <div><dt>Category</dt><dd>{label(item.category)}</dd></div>
+        {item.resolutionSummary && <div><dt>Resolution</dt><dd>{item.resolutionSummary}</dd></div>}
       </dl>
       {failure && <p role="alert">{failure}</p>}
+      {(canResolve || canReopen) && <label className="form-group">
+        {canResolve ? 'Resolution summary (required to resolve)' : 'Reason for reopening (optional)'}
+        <textarea rows={3} maxLength={2000} value={comment} onChange={event => setComment(event.target.value)} />
+      </label>}
       <div className="itsm-actions">
-        {allowed.map(status => <button className="itsm-button" type="button" key={status} disabled={pending} onClick={() => changeStatus(status)}>
+        {allowed.map(status => <button className="itsm-button" type="button" key={status}
+          disabled={pending || (status === 'RESOLVED' && !comment.trim())} onClick={() => changeStatus(status)}>
           {item.status === 'RESOLVED' && status === 'IN_PROGRESS' ? 'Reopen incident' : actions[status]}
         </button>)}
       </div>
@@ -78,7 +95,7 @@ export default function IncidentDetails({ request, account }) {
           {audit.data.map(event => <li key={event.id}>
             <strong>{label(event.action)}</strong> · {dateTime(event.occurredAt)}
             <p>{event.details}</p>
-            <small>{event.actor === account.userId ? 'You' : event.actor === 'system' ? 'System' : `Account ${event.actor}`}</small>
+            <small>{event.actor === 'system' ? 'System' : event.actor === account.email ? 'You' : event.actor}</small>
           </li>)}
         </ol>}
       </section>
