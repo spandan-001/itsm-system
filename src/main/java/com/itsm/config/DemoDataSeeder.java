@@ -23,6 +23,8 @@ import com.itsm.model.Technician;
 import com.itsm.repository.EmployeeRepository;
 import com.itsm.repository.ITServiceRepository;
 import com.itsm.repository.TechnicianRepository;
+import com.itsm.model.AccountLink.Role;
+import com.itsm.service.AccountService;
 import com.itsm.service.IncidentService;
 
 /**
@@ -75,6 +77,16 @@ public class DemoDataSeeder implements ApplicationRunner {
         technicians.save(new Technician("Kavya Reddy", "kavya.reddy@example.test", "AUTHENTICATION", false,
                 EnumSet.of(IncidentCategory.AUTHENTICATION, IncidentCategory.CLOUD)));
 
+        // A past outage, already fixed and rated: its fix is suggested for the new Wi-Fi incident below.
+        Incident pastWifi = create("Library wireless access point offline", "Wi-Fi in the library reading room stopped working for everyone.",
+                IncidentCategory.NETWORK, Impact.HIGH, Urgency.HIGH, vikram, wifi);
+        advance(pastWifi, IncidentStatus.ACKNOWLEDGED, IncidentStatus.IN_PROGRESS);
+        incidentService.updateStatus(pastWifi.getId(), IncidentStatus.RESOLVED,
+                "Access point AP-3 had crashed. Power-cycled it from the controller and updated its firmware to 8.10.");
+        advance(pastWifi, IncidentStatus.VERIFIED, IncidentStatus.CLOSED);
+        incidentService.recordFeedback(pastWifi.getId(), 5, "Fixed within the hour, thank you",
+                new AccountService.LinkedAccount(Role.EMPLOYEE, vikram.getId(), vikram.getEmail()));
+
         Incident wifiDown = create("Campus Wi-Fi down in library", "No devices can connect to the Wi-Fi on any floor of the library.",
                 IncidentCategory.NETWORK, Impact.HIGH, Urgency.HIGH, neha, wifi);
         // Detected as a duplicate of the one above.
@@ -99,7 +111,7 @@ public class DemoDataSeeder implements ApplicationRunner {
         advance(printer, IncidentStatus.VERIFIED, IncidentStatus.CLOSED);
 
         log.info("Seeded demo data: {} services, {} employees, {} technicians, {} incidents",
-                services.count(), employees.count(), technicians.count(), 6);
+                services.count(), employees.count(), technicians.count(), 7);
     }
 
     private Incident create(String title, String description, IncidentCategory category, Impact impact,

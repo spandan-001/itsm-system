@@ -64,6 +64,9 @@ public interface IncidentRepository extends JpaRepository<Incident, Long>, JpaSp
 
     List<Incident> findByDuplicateOf_Id(Long originalId);
 
+    // Suggested resolutions: incidents with a recorded fix
+    List<Incident> findByResolutionSummaryIsNotNullAndDuplicateOfIsNull();
+
     interface TechnicianCount {
         Long getTechnicianId();
 

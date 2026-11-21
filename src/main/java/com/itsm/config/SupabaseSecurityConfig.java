@@ -36,7 +36,8 @@ public class SupabaseSecurityConfig {
                                 "/api/incidents/search", "/api/incidents/{id:[0-9]+}", "/api/incidents/{id}/audit",
                                 "/api/incidents/{id}/sla", "/api/notifications",
                                 "/api/notifications/unread-count", "/api/incidents/{id}/notifications",
-                                "/api/sla/policies", "/api/technicians/me", "/api/incidents/{id}/notes").authenticated()
+                                "/api/sla/policies", "/api/technicians/me", "/api/incidents/{id}/notes",
+                                "/api/incidents/{id}/suggested-resolutions").authenticated()
                         .requestMatchers(HttpMethod.POST, "/api/incidents", "/api/incidents/{id}/notes",
                                 "/api/incidents/{id}/feedback", "/api/incidents/classify").authenticated()
                         .requestMatchers(HttpMethod.PATCH, "/api/incidents/{id}/status",

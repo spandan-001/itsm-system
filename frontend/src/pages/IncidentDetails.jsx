@@ -27,6 +27,8 @@ export default function IncidentDetails({ request, account }) {
   const sla = useApiData(request, incident.data ? path + '/sla' : null);
   const audit = useApiData(request, incident.data ? path + '/audit' : null);
   const notes = useApiData(request, incident.data ? path + '/notes' : null);
+  const fixes = useApiData(request, incident.data && account.role !== 'EMPLOYEE'
+    && !feedbackStatuses.has(incident.data.status) ? path + '/suggested-resolutions' : null);
   const [failure, setFailure] = useState('');
   const [pending, setPending] = useState(false);
   const [comment, setComment] = useState('');
@@ -95,6 +97,19 @@ export default function IncidentDetails({ request, account }) {
           {item.status === 'RESOLVED' && status === 'IN_PROGRESS' ? 'Reopen incident' : actions[status]}
         </button>)}
       </div>
+      {fixes.data?.length > 0 && <section className="itsm-section">
+        <h2>Suggested fixes from similar incidents</h2>
+        <ol className="itsm-thread">
+          {fixes.data.map(fix => <li key={fix.incidentId}>
+            <strong>#{fix.incidentId} {fix.title}</strong>
+            {fix.confirmed && <span className="itsm-badge">confirmed fix</span>}
+            {fix.feedbackRating && <span className="itsm-badge">rated {fix.feedbackRating}/5</span>}
+            <p>{fix.resolution}</p>
+            {canResolve && <button type="button" className="itsm-link-button" onClick={() => setComment(fix.resolution)}>
+              Use as resolution summary</button>}
+          </li>)}
+        </ol>
+      </section>}
       <section className="itsm-section">
         <h2>Conversation</h2>
         {notes.error && <p role="alert">{notes.error.message}</p>}
