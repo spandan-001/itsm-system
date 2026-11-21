@@ -51,6 +51,15 @@ Strategies can be switched live, which is handy in the demo: `PUT /api/strategie
 1. **Duplicate detection** (`service/duplicate`): cosine similarity of term frequencies (stop words removed, plurals stemmed). Score = 0.6 × title + 0.4 × description, +0.15 if the same IT service is affected. Compared with open incidents of the same category from the last 7 days. ≥ 0.55 links as duplicate. Reporters of duplicates are notified when the original changes.
 2. **Smart routing** (`SmartAssignmentStrategy`): 50 points for a skill match, 30 × spare capacity (max 5 open incidents), 20 × experience (similar incidents resolved before). P1 incidents wait for a skilled technician; others fall back to whoever is free.
 
+3. **Automatic categorisation** (`service/classification`): a multinomial Naive Bayes classifier (written from scratch, Laplace smoothing, softmax confidence) suggests a category from the report text. It trains on 360 labelled examples (`src/main/resources/classifier/training-data.tsv`) plus every resolved incident, and retrains each time an incident closes, so it learns from the organisation's own history. **5-fold cross-validated accuracy: 82%** on unseen reports, against 11% for guessing among 9 categories. The report form shows the suggestion live; on creation, a suggestion at least 85% confident replaces a wrong category before duplicate detection and routing, and the audit trail records the correction. `IncidentClassifier` is an interface, so another model (e.g. an LLM) can replace it.
+
+| Method and path | Who | Purpose |
+| --- | --- | --- |
+| `POST /api/incidents/classify` | any signed-in user | `{"title": "...", "description": "..."}` → category, confidence, runners-up |
+| `GET /api/classifier` | admin | Training size, vocabulary, cross-validated accuracy, settings |
+| `PUT /api/classifier/settings` | admin | `{"autoCorrect": true, "threshold": 0.85}` |
+| `POST /api/classifier/retrain` | admin | Retrain now |
+
 ## Lifecycle
 
 `NEW → CLASSIFIED → (QUEUED →) ASSIGNED → ACKNOWLEDGED → IN_PROGRESS → RESOLVED → VERIFIED → CLOSED`

@@ -25,7 +25,10 @@ export default function MyIncidents({ request, account }) {
             <tbody>
               {data.content.map(incident => (
                 <tr key={incident.id}>
-                  <td><Link to={`/incidents/${incident.id}`}>#{incident.id} {incident.title}</Link></td>
+                  <td><Link to={`/incidents/${incident.id}`}>#{incident.id} {incident.title}</Link>
+                    {incident.duplicateOfId && <span className="itsm-badge">linked to #{incident.duplicateOfId}</span>}
+                    {incident.awaitingReporterInfo && <span className="itsm-badge">{employee ? 'your reply needed' : 'waiting on reporter'}</span>}
+                  </td>
                   <td>{incident.priority}</td>
                   <td>{label(incident.status)}</td>
                   <td>{dateTime(incident.resolutionDueAt)}</td>

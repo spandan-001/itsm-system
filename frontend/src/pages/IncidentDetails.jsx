@@ -13,12 +13,20 @@ const transitions = {
   },
 };
 
+const noteTypes = {
+  EMPLOYEE: { ADDITIONAL_INFO: 'Add information', INFO_RESPONSE: 'Answer the technician' },
+  TECHNICIAN: { INVESTIGATION: 'Investigation note (internal)', INFO_REQUEST: 'Ask the reporter' },
+  ADMIN: { INVESTIGATION: 'Investigation note (internal)', INFO_REQUEST: 'Ask the reporter' },
+};
+const feedbackStatuses = new Set(['RESOLVED', 'VERIFIED', 'CLOSED']);
+
 export default function IncidentDetails({ request, account }) {
   const { id } = useParams();
   const path = `/incidents/${id}`;
   const incident = useApiData(request, path);
   const sla = useApiData(request, incident.data ? path + '/sla' : null);
   const audit = useApiData(request, incident.data ? path + '/audit' : null);
+  const notes = useApiData(request, incident.data ? path + '/notes' : null);
   const [failure, setFailure] = useState('');
   const [pending, setPending] = useState(false);
   const [comment, setComment] = useState('');
@@ -27,6 +35,7 @@ export default function IncidentDetails({ request, account }) {
     incident.reload();
     sla.reload();
     audit.reload();
+    notes.reload();
   }
 
   async function changeStatus(status) {
@@ -67,6 +76,14 @@ export default function IncidentDetails({ request, account }) {
         <div><dt>Category</dt><dd>{label(item.category)}</dd></div>
         {item.resolutionSummary && <div><dt>Resolution</dt><dd>{item.resolutionSummary}</dd></div>}
       </dl>
+      {item.awaitingReporterInfo && <p className="itsm-banner">Waiting for more information from the reporter.</p>}
+      {item.duplicateOfId && <p className="itsm-banner">Linked as a duplicate of incident #{item.duplicateOfId}.
+        Updates on the original are shared with you.</p>}
+      {item.autoReclassified && <p className="itsm-banner">Category corrected from {label(item.reportedCategory)} to{' '}
+        {label(item.category)} by the classifier ({Math.round(item.classificationConfidence * 100)}% confident).</p>}
+      {!item.autoReclassified && account.role !== 'EMPLOYEE' && item.suggestedCategory && item.suggestedCategory !== item.category
+        && <p className="itsm-banner">The classifier thinks this may be {label(item.suggestedCategory)}
+          {' '}({Math.round(item.classificationConfidence * 100)}%).</p>}
       {failure && <p role="alert">{failure}</p>}
       {(canResolve || canReopen) && <label className="form-group">
         {canResolve ? 'Resolution summary (required to resolve)' : 'Reason for reopening (optional)'}
@@ -78,6 +95,26 @@ export default function IncidentDetails({ request, account }) {
           {item.status === 'RESOLVED' && status === 'IN_PROGRESS' ? 'Reopen incident' : actions[status]}
         </button>)}
       </div>
+      <section className="itsm-section">
+        <h2>Conversation</h2>
+        {notes.error && <p role="alert">{notes.error.message}</p>}
+        {notes.data?.length === 0 && <p>No notes yet.</p>}
+        {notes.data?.length > 0 && <ol className="itsm-thread">
+          {notes.data.map(note => <li key={note.id} className={note.internal ? 'internal' : undefined}>
+            <strong>{note.authorName}</strong> · {label(note.type)} · {dateTime(note.createdAt)}
+            {note.internal && <span className="itsm-badge">internal</span>}
+            <p>{note.body}</p>
+          </li>)}
+        </ol>}
+        {item.status !== 'CLOSED' && !item.duplicateOfId && noteTypes[account.role]
+          && <NoteForm request={request} path={path} types={noteTypes[account.role]} onSaved={refresh} />}
+      </section>
+      {account.role === 'EMPLOYEE' && feedbackStatuses.has(item.status) && <section className="itsm-section">
+        <h2>Feedback</h2>
+        {item.feedbackRating
+          ? <p>You rated this resolution {item.feedbackRating}/5{item.feedbackComment ? `: ${item.feedbackComment}` : '.'}</p>
+          : <FeedbackForm request={request} path={path} onSaved={refresh} />}
+      </section>}
       <section className="itsm-section">
         <h2>SLA</h2>
         {sla.error && <p role="alert">{sla.error.message}</p>}
@@ -100,5 +137,84 @@ export default function IncidentDetails({ request, account }) {
         </ol>}
       </section>
     </article>
+  );
+}
+
+function NoteForm({ request, path, types, onSaved }) {
+  const [type, setType] = useState(Object.keys(types)[0]);
+  const [body, setBody] = useState('');
+  const [pending, setPending] = useState(false);
+  const [failure, setFailure] = useState('');
+
+  async function submit(event) {
+    event.preventDefault();
+    setPending(true);
+    setFailure('');
+    try {
+      await request(path + '/notes', { method: 'POST', body: { type, body: body.trim() } });
+      setBody('');
+      onSaved();
+    } catch (error) {
+      setFailure(error.message);
+    } finally {
+      setPending(false);
+    }
+  }
+
+  return (
+    <form onSubmit={submit}>
+      {failure && <p role="alert">{failure}</p>}
+      <label className="form-group">Note type
+        <select value={type} onChange={event => setType(event.target.value)}>
+          {Object.entries(types).map(([value, text]) => <option key={value} value={value}>{text}</option>)}
+        </select>
+      </label>
+      <label className="form-group">Message
+        <textarea rows={3} maxLength={4000} required value={body} onChange={event => setBody(event.target.value)} />
+      </label>
+      <div className="itsm-actions">
+        <button className="itsm-button" type="submit" disabled={pending || !body.trim()}>{pending ? 'Saving…' : 'Add note'}</button>
+      </div>
+    </form>
+  );
+}
+
+function FeedbackForm({ request, path, onSaved }) {
+  const [rating, setRating] = useState('');
+  const [comment, setComment] = useState('');
+  const [pending, setPending] = useState(false);
+  const [failure, setFailure] = useState('');
+
+  async function submit(event) {
+    event.preventDefault();
+    setPending(true);
+    setFailure('');
+    try {
+      const text = comment.trim();
+      await request(path + '/feedback', { method: 'POST', body: text ? { rating: Number(rating), comment: text } : { rating: Number(rating) } });
+      onSaved();
+    } catch (error) {
+      setFailure(error.message);
+    } finally {
+      setPending(false);
+    }
+  }
+
+  return (
+    <form onSubmit={submit}>
+      {failure && <p role="alert">{failure}</p>}
+      <label className="form-group">How well was this resolved?
+        <select required value={rating} onChange={event => setRating(event.target.value)}>
+          <option value="" disabled>Choose a rating</option>
+          {[5, 4, 3, 2, 1].map(value => <option key={value} value={value}>{value} / 5</option>)}
+        </select>
+      </label>
+      <label className="form-group">Comment (optional)
+        <textarea rows={2} maxLength={1000} value={comment} onChange={event => setComment(event.target.value)} />
+      </label>
+      <div className="itsm-actions">
+        <button className="itsm-button" type="submit" disabled={pending || !rating}>{pending ? 'Sending…' : 'Send feedback'}</button>
+      </div>
+    </form>
   );
 }

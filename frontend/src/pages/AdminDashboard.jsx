@@ -1,17 +1,27 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { dateTime, label } from '../api';
 import { useApiData } from '../useApiData';
 
 const assignable = new Set(['CLASSIFIED', 'QUEUED', 'ASSIGNED']);
 const statuses = ['NEW', 'CLASSIFIED', 'QUEUED', 'ASSIGNED', 'ACKNOWLEDGED', 'IN_PROGRESS', 'RESOLVED', 'VERIFIED', 'CLOSED'];
+const priorities = ['P1', 'P2', 'P3', 'P4'];
+const categories = ['HARDWARE', 'SOFTWARE', 'NETWORK', 'DATABASE', 'CLOUD', 'SECURITY', 'AUTHENTICATION', 'APPLICATION', 'STORAGE'];
+const emptyFilters = { incidentId: '', status: '', priority: '', category: '', technicianId: '', createdFrom: '', slaBreached: '', awaitingInfo: '' };
 
 export default function AdminDashboard({ request }) {
   const [page, setPage] = useState(0);
-  const [status, setStatus] = useState('');
   const [keyword, setKeyword] = useState('');
+  const [filters, setFilters] = useState(emptyFilters);
   const [pending, setPending] = useState(false);
   const [failure, setFailure] = useState('');
-  const query = new URLSearchParams({ page, ...(status && { status }), ...(keyword && { keyword }) });
+  const active = Object.fromEntries(Object.entries(filters).filter(([, value]) => value !== ''));
+  const query = new URLSearchParams({ page, ...active, ...(keyword && { keyword }) });
+
+  function filter(name, value) {
+    setFilters(current => ({ ...current, [name]: value }));
+    setPage(0);
+  }
   const incidents = useApiData(request, '/admin/incidents?' + query);
   const technicians = useApiData(request, '/technicians');
   const summary = useApiData(request, '/analytics/summary');
@@ -42,13 +52,32 @@ export default function AdminDashboard({ request }) {
         <div><dt>Open</dt><dd>{summary.data.openIncidents}</dd></div>
         <div><dt>Queued</dt><dd>{summary.data.queuedIncidents}</dd></div>
         <div><dt>SLA breached</dt><dd>{summary.data.slaBreachedIncidents}</dd></div>
+        <div><dt>Critical open (P1)</dt><dd>{summary.data.criticalOpenIncidents}</dd></div>
+        <div><dt>Waiting on reporter</dt><dd>{summary.data.awaitingReporterInfo}</dd></div>
+        <div><dt>Duplicates linked</dt><dd>{summary.data.duplicateIncidents}</dd></div>
+        <div><dt>SLA compliance</dt><dd>{summary.data.slaCompliancePercent == null ? '—' : `${summary.data.slaCompliancePercent}%`}</dd></div>
+        <div><dt>Average rating</dt><dd>{summary.data.averageFeedbackRating == null ? '—' : `${summary.data.averageFeedbackRating} / 5`}</dd></div>
       </dl>}
       <section className="itsm-section">
         <div className="itsm-heading"><h2>Incident management</h2>
+          <button type="button" className="itsm-button secondary" onClick={() => { setFilters(emptyFilters); setKeyword(''); setPage(0); }}>Clear filters</button>
+        </div>
+        <div className="itsm-filters">
           <label>Search <input type="search" value={keyword} onChange={e => { setKeyword(e.target.value); setPage(0); }} /></label>
-          <label>Status <select value={status} onChange={e => { setStatus(e.target.value); setPage(0); }}>
-            <option value="">All statuses</option>
-            {statuses.map(value => <option key={value} value={value}>{label(value)}</option>)}
+          <label>Incident ID <input type="number" min="1" value={filters.incidentId} onChange={e => filter('incidentId', e.target.value)} /></label>
+          <Select name="status" text="Status" value={filters.status} options={statuses} onChange={filter} />
+          <Select name="priority" text="Priority" value={filters.priority} options={priorities} onChange={filter} />
+          <Select name="category" text="Category" value={filters.category} options={categories} onChange={filter} />
+          <label>Technician <select value={filters.technicianId} onChange={e => filter('technicianId', e.target.value)}>
+            <option value="">Any</option>
+            {technicians.data?.map(tech => <option key={tech.id} value={tech.id}>{tech.name}</option>)}
+          </select></label>
+          <label>Created from <input type="date" value={filters.createdFrom} onChange={e => filter('createdFrom', e.target.value)} /></label>
+          <label>SLA <select value={filters.slaBreached} onChange={e => filter('slaBreached', e.target.value)}>
+            <option value="">Any</option><option value="true">Breached</option><option value="false">Within SLA</option>
+          </select></label>
+          <label>Waiting on reporter <select value={filters.awaitingInfo} onChange={e => filter('awaitingInfo', e.target.value)}>
+            <option value="">Any</option><option value="true">Yes</option><option value="false">No</option>
           </select></label>
         </div>
         {!incidents.data && !incidents.error && <p role="status">Loading incidents…</p>}
@@ -56,7 +85,10 @@ export default function AdminDashboard({ request }) {
         {!!incidents.data?.content.length && <div className="itsm-table"><table>
           <thead><tr><th>Incident</th><th>Status</th><th>SLA due</th><th>Technician</th></tr></thead>
           <tbody>{incidents.data.content.map(item => <tr key={item.id}>
-            <td>#{item.id} {item.title} · {item.priority}</td><td>{label(item.status)}</td><td>{dateTime(item.resolutionDueAt)}</td>
+            <td><Link to={`/incidents/${item.id}`}>#{item.id} {item.title}</Link> · {item.priority}
+              {item.duplicateOfId && <span className="itsm-badge">duplicate of #{item.duplicateOfId}</span>}
+              {item.awaitingReporterInfo && <span className="itsm-badge">waiting on reporter</span>}
+            </td><td>{label(item.status)}</td><td>{dateTime(item.resolutionDueAt)}</td>
             <td>{assignable.has(item.status) && technicians.data ? (
               <select aria-label={`Assign technician for incident ${item.id}`}
                 value={item.assignedTechnician?.id ?? ''} disabled={pending}
@@ -74,6 +106,15 @@ export default function AdminDashboard({ request }) {
           <button type="button" disabled={page + 1 >= incidents.data.page.totalPages} onClick={() => setPage(page + 1)}>Next</button>
         </div>}
       </section>
+      {summary.data && Object.keys(summary.data.byService).length > 0 && <section className="itsm-section">
+        <h2>Incidents by service</h2>
+        <div className="itsm-table"><table>
+          <thead><tr><th>Service</th><th>Incidents</th></tr></thead>
+          <tbody>{Object.entries(summary.data.byService).map(([service, count]) => <tr key={service}>
+            <td>{service}</td><td>{count}</td>
+          </tr>)}</tbody>
+        </table></div>
+      </section>}
       <section className="itsm-section">
         <h2>Technician workload</h2>
         {technicians.data?.length === 0 && <p>No technicians configured.</p>}
@@ -86,4 +127,11 @@ export default function AdminDashboard({ request }) {
       </section>
     </section>
   );
+}
+
+function Select({ name, text, value, options, onChange }) {
+  return <label>{text} <select value={value} onChange={event => onChange(name, event.target.value)}>
+    <option value="">Any</option>
+    {options.map(option => <option key={option} value={option}>{label(option)}</option>)}
+  </select></label>;
 }
