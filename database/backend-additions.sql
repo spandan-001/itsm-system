@@ -68,6 +68,12 @@ CREATE TABLE notifications (
 );
 CREATE INDEX idx_notifications_recipient ON notifications (recipient_email);
 
+-- Spring owns authorization. Keep these tables closed to Supabase's public API roles.
+ALTER TABLE technician_skills ENABLE ROW LEVEL SECURITY;
+ALTER TABLE sla_policies ENABLE ROW LEVEL SECURITY;
+ALTER TABLE audit_logs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE notifications ENABLE ROW LEVEL SECURITY;
+
 -- 7. Existing seed technicians get their domain as a skill
 INSERT INTO technician_skills (technician_id, skill)
 SELECT id, domain FROM technicians

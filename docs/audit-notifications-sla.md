@@ -55,5 +55,12 @@ policy changes require administrative access. See the [API handoff](incident-api
 
 ## Schema changes (for the Supabase schema)
 
+For a fresh database, apply `database/schema.sql`, then
+`database/backend-additions.sql` and `database/account-links.sql`.
+On an existing instance with the original schema, apply only the two
+additions in one transaction. Keep Hibernate in validation mode.
+
 - `incidents`: add `response_due_at`, `resolution_due_at`, `responded_at`, `resolved_at` (timestamp, nullable), plus `response_breached` and `resolution_breached` (boolean, not null, default false).
-- New tables: `audit_logs`, `notifications`, `sla_policies`. See the `AuditLog`, `Notification` and `SlaPolicy` entities.
+- New tables: `audit_logs`, `notifications`, `sla_policies`, `technician_skills`, and `account_links`.
+  These use row-level security with no browser access policies. The UI reads
+  these features through Spring's authorized API.

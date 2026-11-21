@@ -8,3 +8,6 @@ CREATE TABLE account_links (
         OR (employee_id IS NULL AND technician_id IS NOT NULL)
     )
 );
+
+-- Account links are provisioned by the database team and read by Spring.
+ALTER TABLE account_links ENABLE ROW LEVEL SECURITY;
