@@ -36,3 +36,35 @@
   .dashboard .main-content { padding: 1rem; }
   .itsm-panel .form-row { flex-wrap: wrap; }
 }
+
+.itsm-shell .itsm-topbar { gap: 1rem; flex-wrap: wrap; overflow-wrap: anywhere; padding-block: .65rem; }
+.itsm-shell .itsm-nav-count { display: flex; align-items: center; justify-content: space-between; gap: .5rem; }
+.itsm-shell .itsm-tag { background: var(--itsm-blue-bg); color: var(--itsm-text); }
+.itsm-shell .itsm-button { background: #344c64; border-color: #48627d; color: #e6eff7; }
+.itsm-shell .itsm-button.secondary { background: var(--itsm-input); border-color: var(--itsm-border); }
+.itsm-shell .itsm-button:hover:not(:disabled) { background: #405c78; }
+.itsm-shell .itsm-table { border: 0; border-radius: 0; }
+.itsm-shell .priority.high { background: #362c33; border-color: #634751; color: #f4beb7; }
+.itsm-shell .itsm-panel-message { padding: .75rem 1.4rem; color: var(--itsm-muted); }
+.itsm-shell .itsm-welcome { margin-top: 2rem; }
+.itsm-shell .itsm-detail { padding: clamp(1rem, 3vw, 1.8rem); border: 1px solid var(--itsm-border); border-radius: var(--itsm-radius); background: var(--itsm-panel); }
+.itsm-shell .itsm-detail > h1, .itsm-shell .itsm-detail .itsm-heading h1 { margin-top: 0; }
+.itsm-shell .itsm-facts div { background: var(--itsm-input); }
+.itsm-shell .admin-stats .admin-stat-card { background: var(--itsm-panel); padding: 22px 20px; }
+.itsm-shell .admin-stats { display: grid; }
+.itsm-shell .admin-stats dd { font-size: 1.8rem; }
+.itsm-shell .itsm-timeline li { background: var(--itsm-input); }
+.itsm-shell .incident-form input, .itsm-shell .incident-form select,
+.itsm-shell .incident-form textarea, .itsm-shell .admin-panel input, .itsm-shell .admin-panel select {
+  background: var(--itsm-input); color: var(--itsm-text); border-color: var(--itsm-border);
+}
+.itsm-shell .incident-form .form-group { color: var(--itsm-text); }
+.itsm-shell .incident-form .form-group > :is(input, select, textarea) { margin-top: .4rem; }
+.itsm-shell .itsm-services { border-color: var(--itsm-border); }
+.itsm-shell .itsm-alert, .itsm-shell [role="alert"] { color: #ffc1b8; }
+.itsm-shell .tech-availability-control { margin-bottom: 1.4rem; }
+.itsm-shell :is(a, button, input, textarea, select):focus-visible { outline: 2px solid #a4c9ef; outline-offset: 3px; }
+@media (max-width: 700px) {
+  .itsm-shell .itsm-main { padding-inline: 1rem; }
+  .itsm-shell .itsm-topbar { align-items: flex-start; }
+}

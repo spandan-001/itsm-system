@@ -1,0 +1,327 @@
+:root {
+  --olive-canvas: radial-gradient(ellipse 65% 360px at 100% 0, #e8f3eb, transparent), #fafbf9;
+  --olive-paper: #fff;
+  --olive-soft: #f2f5f2;
+  --olive-line: #e0e6e0;
+  --olive-ink: #17201b;
+  --olive-muted: #4b5950;
+  --olive-action: #216242;
+  --olive-action-hover: #16492f;
+  --olive-tint: #e3efe6;
+  --olive-danger: #872f32;
+  --olive-radius: 24px;
+}
+
+.itsm-shell {
+  --itsm-bg: var(--olive-soft);
+  --itsm-sidebar: var(--olive-paper);
+  --itsm-panel: var(--olive-paper);
+  --itsm-hover: var(--olive-soft);
+  --itsm-input: #fff;
+  --itsm-border: var(--olive-line);
+  --itsm-blue: var(--olive-action);
+  --itsm-blue-bg: var(--olive-tint);
+  --itsm-text: var(--olive-ink);
+  --itsm-muted: var(--olive-muted);
+  --itsm-radius: var(--olive-radius);
+  min-height: 100dvh;
+  flex-direction: column;
+  gap: 0;
+  padding: clamp(1rem, 3vw, 2.5rem);
+  background: var(--olive-canvas);
+  color-scheme: light;
+  font-family: system-ui, sans-serif;
+  font-size: 14px;
+}
+
+.itsm-shell .itsm-main {
+  min-width: 0;
+  background: transparent;
+  padding: 0;
+  color: var(--olive-ink);
+}
+
+.itsm-shell .itsm-topbar {
+  display: flex;
+  align-items: center;
+  gap: .75rem 1.25rem;
+  padding: .75rem 1.2rem;
+  background: var(--olive-paper);
+  border: 1px solid var(--olive-line);
+  border-radius: var(--olive-radius);
+}
+
+.itsm-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: .65rem;
+  padding-right: 1.25rem;
+  border-right: 1px solid var(--olive-line);
+  color: var(--olive-ink);
+  font-size: 1.25rem;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.itsm-brand-mark { display: grid; gap: 3px; }
+.itsm-brand-mark i {
+  width: 16px;
+  height: 4px;
+  border-radius: 999px;
+  background: #56612e;
+}
+.itsm-brand-mark i:first-child { margin-left: 8px; }
+.itsm-brand-mark i:nth-child(2) { margin-left: 4px; background: #8c9564; }
+
+.itsm-topbar nav {
+  display: flex;
+  flex: 1;
+  flex-wrap: wrap;
+  gap: .25rem;
+}
+
+.itsm-topbar nav a {
+  padding: .55rem .85rem;
+  border-radius: 999px;
+  color: var(--olive-ink);
+  font-weight: 600;
+  text-decoration: none;
+}
+.itsm-topbar nav a:is(:hover, .active) { background: var(--olive-tint); }
+.itsm-topbar .tech-signout { width: auto; margin-left: auto; white-space: nowrap; }
+
+.itsm-shell :is(h1, h2, h3, strong, dd) { color: var(--olive-ink); }
+.itsm-shell .employee-notifications .section-heading h2 { color: var(--olive-ink); }
+.itsm-shell .employee-notifications .section-heading p,
+.itsm-shell .employee-confirmation-card p,
+.itsm-shell :is(.incidents-section td, .admin-panel td) { color: var(--olive-muted); }
+
+.itsm-shell :is(.itsm-welcome, .admin-heading) { margin-block: 2.25rem 1.5rem; }
+.itsm-shell :is(.itsm-welcome, .admin-heading) h1 {
+  font-size: clamp(2rem, 4vw, 3.4rem);
+  line-height: 1.06;
+  letter-spacing: -.055em;
+}
+
+.itsm-shell :is(.stats-grid, .admin-stats) {
+  gap: .85rem;
+  margin-bottom: 1.25rem;
+}
+
+.itsm-shell :is(.stat-card, .admin-stats .admin-stat-card) {
+  padding: 1.15rem;
+  border-radius: var(--olive-radius);
+  border-color: var(--olive-line);
+  background: var(--olive-paper);
+  box-shadow: 0 8px 24px #1536240b;
+}
+
+.itsm-shell :is(.stat-card, .admin-stats .admin-stat-card):first-child {
+  background: #eff7f0;
+}
+
+.itsm-shell :is(.stat-card p, .admin-stat-card dt) { font-size: .78rem; }
+.itsm-shell :is(.stat-card h2, .admin-stats dd) { font-size: clamp(1.85rem, 3vw, 2.65rem); }
+
+.itsm-dashboard-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 2.1fr) minmax(240px, 1fr);
+  align-items: start;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.itsm-dashboard-grid > :is(.incidents-section, .admin-panel) { margin: 0; }
+
+.itsm-shell :is(.incidents-section, .admin-panel, .employee-notifications, .tech-availability-control, .itsm-activity-card, .itsm-detail) {
+  border: 1px solid var(--olive-line);
+  border-radius: var(--olive-radius);
+  background: var(--olive-paper);
+  box-shadow: 0 8px 24px #1536240b;
+  min-width: 0;
+}
+
+.itsm-shell :is(.section-heading, .admin-panel-heading) h2,
+.itsm-activity-card h2 { font-size: 1.05rem; }
+
+.itsm-shell :is(.incidents-section, .admin-panel) :is(th, td) { padding: .85rem 1rem; }
+.itsm-shell .itsm-table th { color: var(--olive-muted); background: var(--olive-soft); }
+.itsm-shell .itsm-table tbody tr:hover { background: var(--olive-soft); }
+.itsm-shell :is(.itsm-table a, .section-heading a, .itsm-activity a) { color: var(--olive-action); }
+.itsm-shell td.incident-id { color: var(--olive-action) !important; }
+.itsm-shell .admin-panel > .itsm-actions { padding: 1rem; }
+
+.itsm-shell :is(.report-button, .itsm-button, .tech-availability-button, .tech-signout, .itsm-actions button) {
+  background: var(--olive-action);
+  color: #fff;
+  border: 1px solid var(--olive-action);
+  border-radius: 999px;
+  padding: .65rem .95rem;
+}
+
+.itsm-shell :is(.report-button, .itsm-button, .tech-availability-button, .tech-signout, .itsm-actions button):hover:not(:disabled) {
+  background: var(--olive-action-hover);
+  color: #fff;
+}
+
+.itsm-shell :is(.itsm-button.secondary, .tech-signout) {
+  background: var(--olive-soft);
+  color: var(--olive-action);
+  border-color: var(--olive-line);
+}
+
+.itsm-shell button:disabled { opacity: .55; cursor: default; }
+.itsm-shell :is(.priority, .status, .itsm-tag) {
+  border: 1px solid var(--olive-line);
+  background: var(--olive-soft);
+  color: var(--olive-action);
+  border-radius: 999px;
+}
+.itsm-shell .priority.high {
+  background: #fae5e3;
+  border-color: #e8c1bd;
+  color: var(--olive-danger);
+}
+.itsm-shell :is(.status.in-progress, .status.pending-confirmation) { background: #f6ebcd; color: #64511d; }
+.itsm-shell :is(.status.resolved, .status.closed) { background: var(--olive-tint); color: var(--olive-action); }
+.itsm-shell :is(.itsm-alert, [role="alert"]) { color: var(--olive-danger); }
+
+.itsm-shell :is(.incident-form, .employee-confirmation-card) {
+  background: var(--olive-soft);
+  border-color: var(--olive-line);
+  border-radius: 16px;
+}
+
+.itsm-shell .itsm-activity-card { padding: 1.25rem; }
+.itsm-activity-card h2 { margin: 0 0 1rem; }
+.itsm-activity-card > p { color: var(--olive-muted); margin-bottom: 0; }
+.itsm-activity, .itsm-shell .itsm-timeline {
+  list-style: none;
+  margin: 0;
+  padding-left: 1.2rem;
+}
+.itsm-activity li, .itsm-shell .itsm-timeline li {
+  position: relative;
+  display: grid;
+  gap: .2rem;
+  background: var(--olive-soft);
+  border: 1px solid var(--olive-line);
+  border-radius: 14px;
+  padding: .7rem .85rem;
+  margin-bottom: .65rem;
+  overflow-wrap: anywhere;
+}
+.itsm-activity li::before, .itsm-shell .itsm-timeline li::before {
+  content: "";
+  position: absolute;
+  top: .9rem;
+  left: -1.25rem;
+  width: .55rem;
+  height: .55rem;
+  border-radius: 50%;
+  background: var(--olive-action);
+}
+.itsm-activity li:not(:last-child)::after, .itsm-shell .itsm-timeline li:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  top: 1.55rem;
+  bottom: -.75rem;
+  left: -1rem;
+  border-left: 1px solid var(--olive-line);
+}
+.itsm-activity li:last-child, .itsm-shell .itsm-timeline li:last-child { margin-bottom: 0; }
+.itsm-activity :is(time, span) { font-size: .8rem; color: var(--olive-muted); }
+
+.itsm-shell :is(a, button, input, textarea, select):focus-visible {
+  outline: 2px solid var(--olive-action);
+  outline-offset: 3px;
+}
+
+@media (max-width: 1120px) {
+  .itsm-dashboard-grid { grid-template-columns: minmax(0, 1fr); }
+}
+
+@media (max-width: 760px) {
+  .itsm-shell > .itsm-main { width: 100%; padding: 0; }
+  .itsm-topbar nav { flex-basis: 100%; order: 1; }
+  .itsm-brand { border-right: 0; padding-right: 0; }
+}
+
+.itsm-shell .admin-panel-heading label { min-width: 0; }
+.itsm-shell .admin-panel-heading :is(input, select) {
+  max-width: 100%;
+  padding: .45rem .65rem;
+  border: 1px solid var(--olive-line);
+  border-radius: 10px;
+}
+
+.itsm-shell .itsm-topbar { align-items: center; }
+.itsm-topbar nav { align-items: center; }
+.itsm-topbar nav a,
+.itsm-topbar .tech-signout {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  gap: .45rem;
+}
+.itsm-topbar nav .itsm-tag { padding: .1em .55em; }
+
+.itsm-shell :is(.stats-grid, .admin-stats) {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+.itsm-shell .stat-card { display: flex; align-items: center; gap: .85rem; text-align: left; }
+.itsm-shell .stat-card p { margin-bottom: .4rem; }
+.itsm-shell .admin-stat-card dt { display: flex; align-items: center; gap: .65rem; }
+
+.itsm-icon {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 2.65rem;
+  height: 2.65rem;
+  border-radius: 12px;
+  background: var(--olive-tint);
+  color: var(--olive-action);
+}
+.itsm-icon svg { width: 1.35rem; height: 1.35rem; }
+.itsm-incident-link { display: inline-flex; align-items: center; gap: .65rem; font-weight: 600; }
+.itsm-incident-link .itsm-icon { width: 2.15rem; height: 2.15rem; }
+
+.itsm-profile { position: relative; margin-left: auto; }
+.itsm-profile-trigger {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--olive-line);
+  border-radius: 50%;
+  background: var(--olive-tint);
+  color: var(--olive-action);
+  font-weight: 700;
+  list-style: none;
+  cursor: pointer;
+}
+.itsm-profile-trigger::-webkit-details-marker { display: none; }
+.itsm-profile-trigger:focus-visible { outline: 2px solid var(--olive-action); outline-offset: 3px; }
+.itsm-profile-panel {
+  position: absolute;
+  z-index: 2;
+  inset: calc(100% + .65rem) 0 auto auto;
+  width: min(260px, calc(100vw - 4rem));
+  padding: 1rem;
+  border: 1px solid var(--olive-line);
+  border-radius: 16px;
+  background: var(--olive-paper);
+  box-shadow: 0 12px 32px #15362420;
+}
+.itsm-profile-panel h2 { margin: 0 0 .5rem; font-size: 1rem; }
+.itsm-profile-panel p { margin: 0 0 .5rem; color: var(--olive-muted); overflow-wrap: anywhere; }
+
+@media (max-width: 900px) {
+  .itsm-shell :is(.stats-grid, .admin-stats) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 420px) {
+  .itsm-shell .stat-card { flex-wrap: wrap; padding: .85rem; }
+}

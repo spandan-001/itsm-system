@@ -27,13 +27,15 @@ export default function Login({ message, disabled, signedIn }) {
   return (
     <main className="login-page">
       <div className="login-card">
-        <h1>I-ITSM</h1>
-        <p className="subtitle">Intelligent IT Service Management System</p>
-        <h2>Welcome</h2>
+        <h1 className="itsm-brand">
+          <span className="itsm-brand-mark" aria-hidden="true"><i /><i /><i /></span>
+          ITSM
+        </h1>
+        <p className="login-description">Sign in to report and track IT incidents.</p>
         {message && <p role="status">{message}</p>}
         {error && <p role="alert">{error}</p>}
         <button className="google-button" type="button" disabled={disabled || pending} onClick={authenticate}>
-          {signedIn ? 'Sign out' : 'Continue with Google'}
+          {signedIn ? 'Sign out' : <><span className="google-icon" aria-hidden="true">G</span>Continue with Google</>}
         </button>
       </div>
     </main>

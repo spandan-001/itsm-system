@@ -31,7 +31,7 @@ export default function Notifications({ request }) {
   }
 
   return (
-    <section className="itsm-panel">
+    <section className="itsm-panel itsm-detail">
       <div className="itsm-heading"><h1>Notifications {count.data && <span className="itsm-tag">{count.data.unread} unread</span>}</h1>
         <button type="button" className="itsm-button secondary" onClick={refresh}>Refresh</button>
       </div>

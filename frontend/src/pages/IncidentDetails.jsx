@@ -44,7 +44,7 @@ export default function IncidentDetails({ request, account }) {
   const allowed = item.allowedTransitions?.filter(status => actions[status]) ?? [];
 
   return (
-    <article className="itsm-panel">
+    <article className="itsm-panel itsm-detail">
       <div className="itsm-heading"><h1>#{item.id} {item.title}</h1>
         <button type="button" className="itsm-button secondary" onClick={refresh}>Refresh</button>
       </div>
