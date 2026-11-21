@@ -2,6 +2,17 @@
 
 Base path `/api/incidents`. Requests with a body use `Content-Type: application/json`.
 
+## Verify the signed-in account
+
+After Google sign-in through Supabase, send the Supabase session's access token
+as `Authorization: Bearer <access_token>` to `GET /api/me`. A valid token
+returns `200` with `userId` (the Supabase user UUID) and `email`. A missing,
+expired, or invalid token returns `401`.
+
+Spring defaults to the ITSM development Supabase issuer. For another Supabase
+project using ES256 signing keys, set `SUPABASE_AUTH_ISSUER` to its project URL
+followed by `/auth/v1`. Employee and technician authorization is still pending.
+
 | Method and path | Request | Success response |
 | --- | --- | --- |
 | `POST /api/incidents` | Incident fields shown below | `200` with the created incident, including its calculated priority. It is classified and routed automatically, so it is usually `ASSIGNED` (or `QUEUED`, or `NEW` with `duplicateOfId` if it was detected as a duplicate) |
