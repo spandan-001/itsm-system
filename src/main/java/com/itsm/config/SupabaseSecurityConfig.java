@@ -38,11 +38,11 @@ public class SupabaseSecurityConfig {
                                 "/api/notifications/unread-count", "/api/incidents/{id}/notifications",
                                 "/api/sla/policies", "/api/technicians/me", "/api/incidents/{id}/notes").authenticated()
                         .requestMatchers(HttpMethod.POST, "/api/incidents", "/api/incidents/{id}/notes",
-                                "/api/incidents/{id}/feedback").authenticated()
+                                "/api/incidents/{id}/feedback", "/api/incidents/classify").authenticated()
                         .requestMatchers(HttpMethod.PATCH, "/api/incidents/{id}/status",
                                 "/api/notifications/{id}/read", "/api/technicians/{id}/availability").authenticated()
                         .requestMatchers("/api/admin/**", "/api/audit", "/api/analytics/**", "/api/routing/**",
-                                "/api/technicians/**", "/api/strategies/**", "/api/sla/**",
+                                "/api/technicians/**", "/api/strategies/**", "/api/sla/**", "/api/classifier/**",
                                 "/api/incidents/similar", "/api/incidents/{id}/assignment",
                                 "/api/incidents/{id}/recommendations", "/api/incidents/{id}/duplicates",
                                 "/api/incidents/{id}/not-duplicate")

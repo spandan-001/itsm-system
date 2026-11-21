@@ -22,6 +22,7 @@ import com.itsm.event.FeedbackReceivedEvent;
 import com.itsm.exception.OperationNotPermittedException;
 import com.itsm.exception.TechnicianWorkloadExceededException;
 import com.itsm.model.AccountLink.Role;
+import com.itsm.service.classification.ClassificationService;
 import com.itsm.service.note.NoteService;
 import com.itsm.strategy.assignment.TechnicianCandidate;
 import com.itsm.event.IncidentAssignedEvent;
@@ -66,6 +67,7 @@ public class IncidentService {
     private final RoutingService routingService;
     private final CurrentActorProvider actorProvider;
     private final NoteService noteService;
+    private final ClassificationService classificationService;
     private final ApplicationEventPublisher eventPublisher;
     private final boolean autoRouting;
 
@@ -80,6 +82,7 @@ public class IncidentService {
             RoutingService routingService,
             CurrentActorProvider actorProvider,
             NoteService noteService,
+            ClassificationService classificationService,
             ApplicationEventPublisher eventPublisher,
             @Value("${itsm.routing.auto-assign:true}") boolean autoRouting) {
 
@@ -93,6 +96,7 @@ public class IncidentService {
         this.routingService = routingService;
         this.actorProvider = actorProvider;
         this.noteService = noteService;
+        this.classificationService = classificationService;
         this.eventPublisher = eventPublisher;
         this.autoRouting = autoRouting;
     }
@@ -141,6 +145,8 @@ public class IncidentService {
 
         Incident incident = new Incident(title, description, category, impact, urgency, reporter, affectedServices);
         incident.setPriority(priorityCalculator.calculate(impact, urgency, affectedServices));
+        // Before duplicate detection and routing, which both depend on the category.
+        classificationService.classify(incident);
 
         // A duplicate is linked to the original and not given its own SLA or technician.
         Optional<DuplicateDetector.ScoredIncident> duplicate = duplicateDetector.findDuplicate(incident);

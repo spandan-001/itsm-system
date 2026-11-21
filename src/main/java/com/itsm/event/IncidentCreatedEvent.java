@@ -23,8 +23,16 @@ public final class IncidentCreatedEvent extends IncidentEvent {
     @Override
     public String describe() {
         Incident incident = getIncident();
-        return "Incident reported by " + incident.getReporter().getName()
+        String text = "Incident reported by " + incident.getReporter().getName()
                 + " with priority " + incident.getPriority()
                 + " (impact " + incident.getImpact() + ", urgency " + incident.getUrgency() + ")";
+        if (incident.getSuggestedCategory() != null) {
+            long percent = Math.round(incident.getClassificationConfidence() * 100);
+            text += incident.isAutoReclassified()
+                    ? ". Reclassified from " + incident.getReportedCategory() + " to " + incident.getCategory()
+                            + " by the classifier (" + percent + "% confident)"
+                    : ". Classifier suggested " + incident.getSuggestedCategory() + " (" + percent + "%)";
+        }
+        return text;
     }
 }

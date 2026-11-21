@@ -114,3 +114,9 @@ CREATE TABLE incident_notes (
 );
 CREATE INDEX idx_incident_notes_incident_id ON incident_notes (incident_id);
 ALTER TABLE incident_notes ENABLE ROW LEVEL SECURITY;
+
+-- 10. Automatic categorisation (Naive Bayes suggestion and the reporter's original choice)
+ALTER TABLE incidents
+    ADD COLUMN reported_category VARCHAR(40),
+    ADD COLUMN suggested_category VARCHAR(40),
+    ADD COLUMN classification_confidence DOUBLE PRECISION;

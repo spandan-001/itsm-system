@@ -84,6 +84,17 @@ public class Incident {
 
     private Double duplicateScore;
 
+    // Automatic categorisation (Naive Bayes)
+    @Enumerated(EnumType.STRING)
+    @Column(length = 40)
+    private IncidentCategory reportedCategory;
+
+    @Enumerated(EnumType.STRING)
+    @Column(length = 40)
+    private IncidentCategory suggestedCategory;
+
+    private Double classificationConfidence;
+
     // Investigation, resolution, closure and feedback
     @Column(nullable = false)
     private boolean awaitingReporterInfo;
@@ -398,6 +409,44 @@ public class Incident {
 
     public Double getDuplicateScore() {
         return duplicateScore;
+    }
+
+    // Classification behaviour
+
+    /**
+     * Records the classifier's suggestion. With a threshold, a confident
+     * suggestion that differs from the reporter's choice replaces it.
+     * @return true if the category was changed
+     */
+    public boolean applyClassification(IncidentCategory suggested, double confidence, Double autoCorrectThreshold) {
+        if (reportedCategory == null) {
+            reportedCategory = category;
+        }
+        suggestedCategory = suggested;
+        classificationConfidence = confidence;
+        if (autoCorrectThreshold != null && suggested != null && suggested != category
+                && confidence >= autoCorrectThreshold) {
+            category = suggested;
+            return true;
+        }
+        return false;
+    }
+
+    /** The category the reporter chose (may differ from {@link #getCategory()} after auto-correct). */
+    public IncidentCategory getReportedCategory() {
+        return reportedCategory;
+    }
+
+    public IncidentCategory getSuggestedCategory() {
+        return suggestedCategory;
+    }
+
+    public Double getClassificationConfidence() {
+        return classificationConfidence;
+    }
+
+    public boolean isAutoReclassified() {
+        return reportedCategory != null && reportedCategory != category;
     }
 
     // Investigation, resolution and feedback behaviour
