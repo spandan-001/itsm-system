@@ -64,7 +64,7 @@ export default function IncidentDetails({ request, account }) {
   const canReopen = item.status === 'RESOLVED' && allowed.includes('IN_PROGRESS');
 
   return (
-    <article className="itsm-panel">
+    <article className="itsm-panel itsm-detail">
       <div className="itsm-heading"><h1>#{item.id} {item.title}</h1>
         <button type="button" className="itsm-button secondary" onClick={refresh}>Refresh</button>
       </div>

@@ -1,69 +1,57 @@
-
 .login-page {
-  min-height: 100vh;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  background: #f1f5f9;
-  font-family: Arial, sans-serif;
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: 1.25rem;
+  background: var(--olive-canvas);
+  color: var(--olive-ink);
+  font-family: system-ui, sans-serif;
 }
 
 .login-card {
-  background: white;
-  width: 380px;
-  padding: 45px;
-  border-radius: 16px;
+  width: min(100%, 400px);
+  padding: clamp(1.5rem, 6vw, 3rem);
+  border: 1px solid var(--olive-line);
+  border-radius: var(--olive-radius);
+  background: var(--olive-paper);
+  box-shadow: 0 12px 32px #1536240b;
   text-align: center;
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
 }
 
-.login-card h1 {
-  color: #2563eb;
-  font-size: 32px;
-  margin-bottom: 8px;
+.login-card .itsm-brand {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  font-size: 1.75rem;
 }
 
-.subtitle {
-  color: #64748b;
-  font-size: 13px;
-  margin-bottom: 40px;
+.login-description {
+  margin: .75rem 0 1.75rem;
+  color: var(--olive-muted);
+  line-height: 1.5;
 }
 
-.login-card h2 {
-  color: #1e293b;
-  font-size: 25px;
-}
-
-.description {
-  color: #64748b;
-  font-size: 14px;
-  line-height: 1.6;
-  margin-bottom: 30px;
-}
+.login-card [role="status"] { color: var(--olive-muted); }
+.login-card [role="alert"] { color: var(--olive-danger); }
 
 .google-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: .65rem;
   width: 100%;
-  padding: 13px;
-  background: white;
-  border: 1px solid #cbd5e1;
-  border-radius: 8px;
-  font-size: 15px;
+  min-height: 48px;
+  padding: .7rem 1rem;
+  border: 1px solid var(--olive-line);
+  border-radius: 999px;
+  background: var(--olive-soft);
+  color: var(--olive-ink);
+  font: inherit;
+  font-weight: 600;
   cursor: pointer;
 }
 
-.google-button:hover {
-  background: #f8fafc;
-}
-
-.google-icon {
-  color: #4285F4;
-  font-weight: bold;
-  margin-right: 12px;
-  font-size: 18px;
-}
-
-.footer-text {
-  color: #94a3b8;
-  font-size: 12px;
-  margin-top: 30px;
-}
+.google-button:hover:enabled { background: var(--olive-tint); }
+.google-button:focus-visible { outline: 2px solid var(--olive-action); outline-offset: 3px; }
+.google-button:disabled { cursor: default; opacity: .65; }
+.google-icon { color: #3571ce; font-weight: 700; }

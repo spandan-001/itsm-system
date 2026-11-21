@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useState } from 'react';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 
 import { api, supabase } from './api';
@@ -6,9 +6,10 @@ import AccountLayout from './pages/AccountLayout';
 import Login from './pages/Login';
 import MyIncidents from './pages/MyIncidents';
 import ReportIncident from './pages/ReportIncident';
-import IncidentDetails from './pages/IncidentDetails';
-import Notifications from './pages/Notifications';
-import AdminDashboard from './pages/AdminDashboard';
+
+const IncidentDetails = lazy(() => import('./pages/IncidentDetails'));
+const Notifications = lazy(() => import('./pages/Notifications'));
+const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
 
 function App() {
   const [session, setSession] = useState(undefined);
@@ -54,17 +55,19 @@ function App() {
   const home = account.role === 'EMPLOYEE' ? '/employee' : account.role === 'TECHNICIAN' ? '/technician' : '/admin';
   return (
     <BrowserRouter>
-      <AccountLayout account={account} home={home}>
-        <Routes>
-          <Route path="/employee" element={account.role === 'EMPLOYEE' ? <MyIncidents request={request} account={account} /> : <Navigate to={home} replace />} />
-          <Route path="/technician" element={account.role === 'TECHNICIAN' ? <MyIncidents request={request} account={account} /> : <Navigate to={home} replace />} />
-          <Route path="/my-incidents" element={<Navigate to={home} replace />} />
-          <Route path="/report-incident" element={account.role === 'EMPLOYEE' ? <ReportIncident request={request} /> : <Navigate to={home} replace />} />
-          <Route path="/incidents/:id" element={account.role ? <IncidentDetails request={request} account={account} /> : <Navigate to={home} replace />} />
-          <Route path="/notifications" element={account.role ? <Notifications request={request} /> : <Navigate to={home} replace />} />
-          <Route path="/admin" element={account.admin ? <AdminDashboard request={request} /> : <Navigate to={home} replace />} />
-          <Route path="*" element={<Navigate to={home} replace />} />
-        </Routes>
+      <AccountLayout account={account} home={home} request={request}>
+        <Suspense fallback={<p role="status">Loading workspace…</p>}>
+          <Routes>
+            <Route path="/employee" element={account.role === 'EMPLOYEE' ? <MyIncidents request={request} account={account} /> : <Navigate to={home} replace />} />
+            <Route path="/technician" element={account.role === 'TECHNICIAN' ? <MyIncidents request={request} account={account} /> : <Navigate to={home} replace />} />
+            <Route path="/my-incidents" element={account.role ? <MyIncidents request={request} account={account} overview={false} /> : <Navigate to={home} replace />} />
+            <Route path="/report-incident" element={account.role === 'EMPLOYEE' ? <ReportIncident request={request} /> : <Navigate to={home} replace />} />
+            <Route path="/incidents/:id" element={account.role ? <IncidentDetails request={request} account={account} /> : <Navigate to={home} replace />} />
+            <Route path="/notifications" element={account.role ? <Notifications request={request} /> : <Navigate to={home} replace />} />
+            <Route path="/admin" element={account.admin ? <AdminDashboard request={request} /> : <Navigate to={home} replace />} />
+            <Route path="*" element={<Navigate to={home} replace />} />
+          </Routes>
+        </Suspense>
       </AccountLayout>
     </BrowserRouter>
   );

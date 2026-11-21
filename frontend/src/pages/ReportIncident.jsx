@@ -55,7 +55,7 @@ export default function ReportIncident({ request }) {
   }
 
   return (
-    <section className="itsm-panel">
+    <section className="itsm-panel itsm-detail">
       <h1>Report an incident</h1>
       {error && <p role="alert">{error.message}</p>}
       {!services && !error && <p role="status">Loading services…</p>}
