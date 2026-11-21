@@ -74,6 +74,17 @@ public interface IncidentRepository extends JpaRepository<Incident, Long>, JpaSp
     List<Long> findEscalationCandidateIds(@Param("priorities") Collection<com.itsm.enums.Priority> priorities,
                                           @Param("statuses") Collection<IncidentStatus> statuses);
 
+    /** Open incidents (duplicates included: they are evidence too) on a service, reported since a time. */
+    @Query("""
+            select i from Incident i join i.affectedServices s
+            where s.id = :serviceId and i.createdAt >= :since and i.status not in :closed
+            order by i.createdAt""")
+    List<Incident> findRecentOpenOnService(@Param("serviceId") Long serviceId, @Param("since") LocalDateTime since,
+                                           @Param("closed") Collection<IncidentStatus> closed);
+
+    @Query("select count(i) from Incident i where i.outage.id = :outageId and i.status not in :closed")
+    long countOpenInOutage(@Param("outageId") Long outageId, @Param("closed") Collection<IncidentStatus> closed);
+
     // Suggested resolutions: incidents with a recorded fix
     List<Incident> findByResolutionSummaryIsNotNullAndDuplicateOfIsNull();
 

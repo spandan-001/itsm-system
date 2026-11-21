@@ -114,6 +114,11 @@ public class Incident {
 
     private LocalDateTime feedbackAt;
 
+    // Correlation: the service outage this incident is part of
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "outage_id")
+    private ServiceOutage outage;
+
     // Escalation of unacknowledged critical incidents
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 30)
@@ -455,6 +460,21 @@ public class Incident {
 
     public boolean isAutoReclassified() {
         return reportedCategory != null && reportedCategory != category;
+    }
+
+    // Outage correlation behaviour
+
+    public void linkToOutage(ServiceOutage outage) {
+        this.outage = outage;
+    }
+
+    /** The outage, or null. Not a bean getter, so JSON shows only the id. */
+    public ServiceOutage outage() {
+        return outage;
+    }
+
+    public Long getOutageId() {
+        return outage == null ? null : outage.getId();
     }
 
     // Escalation behaviour

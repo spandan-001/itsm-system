@@ -43,7 +43,7 @@ public class SupabaseSecurityConfig {
                         .requestMatchers(HttpMethod.PATCH, "/api/incidents/{id}/status",
                                 "/api/notifications/{id}/read", "/api/technicians/{id}/availability").authenticated()
                         .requestMatchers("/api/admin/**", "/api/audit", "/api/analytics/**", "/api/routing/**",
-                                "/api/technicians/**", "/api/strategies/**", "/api/sla/**", "/api/classifier/**",
+                                "/api/technicians/**", "/api/strategies/**", "/api/sla/**", "/api/classifier/**", "/api/outages", "/api/outages/**",
                                 "/api/incidents/similar", "/api/incidents/{id}/assignment",
                                 "/api/incidents/{id}/recommendations", "/api/incidents/{id}/duplicates",
                                 "/api/incidents/{id}/not-duplicate")

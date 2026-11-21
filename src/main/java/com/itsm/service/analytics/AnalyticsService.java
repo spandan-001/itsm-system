@@ -33,12 +33,14 @@ public class AnalyticsService {
 
     private final IncidentRepository incidentRepository;
     private final TechnicianRepository technicianRepository;
+    private final com.itsm.repository.ServiceOutageRepository outageRepository;
     private final Clock clock;
 
     public AnalyticsService(IncidentRepository incidentRepository, TechnicianRepository technicianRepository,
-                            Clock clock) {
+                            com.itsm.repository.ServiceOutageRepository outageRepository, Clock clock) {
         this.incidentRepository = incidentRepository;
         this.technicianRepository = technicianRepository;
+        this.outageRepository = outageRepository;
         this.clock = clock;
     }
 
@@ -86,6 +88,7 @@ public class AnalyticsService {
                 ratings.getCount() == 0 ? null : round(ratings.getAverage()),
                 all.stream().filter(i -> i.getEscalationLevel() != com.itsm.enums.EscalationLevel.NONE
                         && !IncidentStates.closedStatuses().contains(i.getStatus())).count(),
+                outageRepository.countByStatus(com.itsm.model.ServiceOutage.Status.ACTIVE),
                 compliance,
                 resolved.isEmpty() ? null
                         : round(resolved.stream().mapToLong(AnalyticsService::resolutionMinutes).average().orElse(0)),

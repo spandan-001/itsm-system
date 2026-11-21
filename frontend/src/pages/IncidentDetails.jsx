@@ -80,6 +80,8 @@ export default function IncidentDetails({ request, account }) {
       </dl>
       {item.escalationLevel && item.escalationLevel !== 'NONE' && <p className="itsm-banner">
         Escalated to {label(item.escalationLevel)} at {dateTime(item.escalatedAt)}: not acknowledged within the response target.</p>}
+      {item.outageId && <p className="itsm-banner">Part of suspected service outage #{item.outageId}:
+        several incidents were reported against the same service at the same time.</p>}
       {item.awaitingReporterInfo && <p className="itsm-banner">Waiting for more information from the reporter.</p>}
       {item.duplicateOfId && <p className="itsm-banner">Linked as a duplicate of incident #{item.duplicateOfId}.
         Updates on the original are shared with you.</p>}

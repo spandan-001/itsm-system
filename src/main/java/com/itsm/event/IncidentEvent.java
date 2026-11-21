@@ -18,7 +18,7 @@ public abstract sealed class IncidentEvent
         permits IncidentCreatedEvent, IncidentAssignedEvent,
                 IncidentStatusChangedEvent, SlaBreachedEvent,
                 DuplicateLinkEvent, IncidentNoteAddedEvent, SlaWarningEvent, FeedbackReceivedEvent,
-                IncidentEscalatedEvent {
+                IncidentEscalatedEvent, OutageCorrelatedEvent {
 
     public static final String SYSTEM_ACTOR = "system";
 

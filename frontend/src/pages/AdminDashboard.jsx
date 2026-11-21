@@ -28,6 +28,7 @@ export default function AdminDashboard({ request }) {
   const technicians = useApiData(request, '/technicians');
   const summary = useApiData(request, '/analytics/summary');
   const audit = useApiData(request, '/audit?size=5');
+  const outages = useApiData(request, '/outages');
 
   async function assign(id, technicianId) {
     if (!technicianId) return;
@@ -57,6 +58,7 @@ export default function AdminDashboard({ request }) {
         <div className="admin-stat-card"><dt><DashboardIcon name="clock" />Queued</dt><dd>{summary.data.queuedIncidents}</dd></div>
         <div className="admin-stat-card"><dt><DashboardIcon name="clock" />SLA breached</dt><dd>{summary.data.slaBreachedIncidents}</dd></div>
         <div className="admin-stat-card"><dt><DashboardIcon name="laptop" />Critical open (P1)</dt><dd>{summary.data.criticalOpenIncidents}</dd></div>
+        <div className="admin-stat-card"><dt><DashboardIcon name="wifi" />Active outages</dt><dd>{summary.data.activeOutages}</dd></div>
         <div className="admin-stat-card"><dt><DashboardIcon name="bell" />Escalated (open)</dt><dd>{summary.data.escalatedOpenIncidents}</dd></div>
         <div className="admin-stat-card"><dt><DashboardIcon name="bell" />Waiting on reporter</dt><dd>{summary.data.awaitingReporterInfo}</dd></div>
         <div className="admin-stat-card"><dt><DashboardIcon name="check" />SLA compliance</dt>
@@ -96,6 +98,7 @@ export default function AdminDashboard({ request }) {
               <td><Link to={`/incidents/${item.id}`}>#{item.id} {item.title}</Link> · {item.priority}
                 {item.duplicateOfId && <span className="itsm-badge">duplicate of #{item.duplicateOfId}</span>}
                 {item.awaitingReporterInfo && <span className="itsm-badge">waiting on reporter</span>}
+                {item.outageId && <span className="itsm-badge">outage #{item.outageId}</span>}
                 {item.escalationLevel && item.escalationLevel !== 'NONE' && <span className="itsm-badge">escalated: {label(item.escalationLevel)}</span>}
               </td><td>{label(item.status)}</td><td>{dateTime(item.resolutionDueAt)}</td>
               <td>{assignable.has(item.status) && technicians.data ? (
@@ -127,6 +130,18 @@ export default function AdminDashboard({ request }) {
           }))}
         />
       </div>
+      <section className="admin-panel">
+        <div className="admin-panel-heading"><h2>Service health</h2></div>
+        {outages.error && <p className="itsm-panel-message" role="alert">{outages.error.message}</p>}
+        {outages.data?.length === 0 && <p className="itsm-panel-message">No outages detected. Services look healthy.</p>}
+        {!!outages.data?.length && <div className="admin-table-container itsm-table"><table>
+          <thead><tr><th>Outage</th><th>Service</th><th>Status</th><th>Detected</th><th>Incidents (open)</th></tr></thead>
+          <tbody>{outages.data.map(o => <tr key={o.id}>
+            <td>#{o.id}</td><td>{o.serviceName}</td><td>{label(o.status)}</td><td>{dateTime(o.detectedAt)}</td>
+            <td>{o.incidentCount} ({o.openIncidents})</td>
+          </tr>)}</tbody>
+        </table></div>}
+      </section>
       {summary.data && Object.keys(summary.data.byService ?? {}).length > 0 && <section className="admin-panel">
         <div className="admin-panel-heading"><h2>Incidents by service</h2></div>
         <div className="admin-table-container itsm-table"><table>

@@ -10,5 +10,6 @@ public enum AuditAction {
     NOTE_ADDED,
     SLA_WARNING,
     FEEDBACK_RECEIVED,
-    ESCALATED
+    ESCALATED,
+    OUTAGE_CORRELATED
 }

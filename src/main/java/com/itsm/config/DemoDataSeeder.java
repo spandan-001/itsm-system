@@ -92,6 +92,9 @@ public class DemoDataSeeder implements ApplicationRunner {
         // Detected as a duplicate of the one above.
         create("Library wifi not working", "Wi-Fi in the library is down, laptops cannot connect.",
                 IncidentCategory.NETWORK, Impact.MEDIUM, Urgency.HIGH, asha, wifi);
+        // A third report on Campus Wi-Fi within minutes: correlated into a suspected service outage.
+        create("Reading room laptops have no internet", "Students in the reading room say the network is unreachable.",
+                IncidentCategory.NETWORK, Impact.MEDIUM, Urgency.HIGH, vikram, wifi);
         Incident portalSlow = create("Student portal very slow", "Pages take over 30 seconds to load during registration.",
                 IncidentCategory.APPLICATION, Impact.MEDIUM, Urgency.MEDIUM, vikram, portal);
         Incident printer = create("Printer jammed on 2nd floor", "The shared printer near finance keeps jamming.",
@@ -111,7 +114,7 @@ public class DemoDataSeeder implements ApplicationRunner {
         advance(printer, IncidentStatus.VERIFIED, IncidentStatus.CLOSED);
 
         log.info("Seeded demo data: {} services, {} employees, {} technicians, {} incidents",
-                services.count(), employees.count(), technicians.count(), 7);
+                services.count(), employees.count(), technicians.count(), 8);
     }
 
     private Incident create(String title, String description, IncidentCategory category, Impact impact,

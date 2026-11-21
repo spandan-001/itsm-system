@@ -21,6 +21,7 @@ public record AnalyticsSummary(
         long awaitingReporterInfo,
         Double averageFeedbackRating,
         long escalatedOpenIncidents,
+        long activeOutages,
         Double slaCompliancePercent,
         Double averageResolutionMinutes,
         Map<IncidentStatus, Long> byStatus,
