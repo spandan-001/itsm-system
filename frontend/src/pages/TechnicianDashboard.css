@@ -1,0 +1,335 @@
+
+.technician-dashboard {
+  display: flex;
+  min-height: 100vh;
+  background: #f7f9fc;
+  color: #243047;
+  font-family: Arial, sans-serif;
+}
+
+.tech-sidebar {
+  width: 195px;
+  background: white;
+  border-right: 1px solid #dce3ed;
+  padding: 25px 18px;
+  display: flex;
+  flex-direction: column;
+}
+
+.tech-sidebar h2 {
+  color: #2864ed;
+  margin-bottom: 5px;
+}
+
+.tech-sidebar p {
+  color: #8292ad;
+  font-size: 12px;
+  margin-bottom: 35px;
+}
+
+.tech-sidebar nav {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.tech-sidebar nav a,
+.tech-sidebar-bottom a {
+  text-decoration: none;
+  color: #52627d;
+  padding: 11px;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.tech-sidebar nav a.active {
+  background: #edf4ff;
+  color: #2864ed;
+}
+
+.tech-sidebar-bottom {
+  margin-top: auto;
+}
+
+.tech-main {
+  flex: 1;
+  padding: 28px 34px;
+  min-width: 0;
+}
+
+.tech-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #e0e6ef;
+  padding-bottom: 25px;
+}
+
+.tech-header h2 {
+  margin: 0 0 8px;
+  font-size: 20px;
+}
+
+.tech-header p,
+.tech-welcome p,
+.tech-section-heading p {
+  color: #8292ad;
+  font-size: 13px;
+}
+
+.tech-profile {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+}
+
+.tech-avatar {
+  background: #dce9ff;
+  color: #2864ed;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  font-weight: bold;
+}
+
+.tech-welcome {
+  margin: 35px 0;
+}
+
+.tech-welcome h1 {
+  font-size: 23px;
+  margin-bottom: 8px;
+}
+
+.tech-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 30px;
+}
+
+.tech-stat-card {
+  background: white;
+  border: 1px solid #dce3ed;
+  border-radius: 8px;
+  padding: 18px;
+}
+
+.tech-stat-card p {
+  color: #647795;
+  font-size: 13px;
+}
+
+.tech-stat-card h2 {
+  font-size: 25px;
+  margin: 10px 0 0;
+}
+
+.tech-incidents {
+  background: white;
+  border: 1px solid #dce3ed;
+  border-radius: 8px;
+  padding: 20px;
+}
+
+.tech-section-heading h2 {
+  font-size: 17px;
+}
+
+.tech-table-container {
+  overflow-x: auto;
+  margin-top: 22px;
+}
+
+.tech-table-container table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 13px;
+}
+
+.tech-table-container th {
+  background: #f5f7fa;
+  color: #647795;
+}
+
+.tech-table-container th,
+.tech-table-container td {
+  padding: 14px 10px;
+  border-bottom: 1px solid #e0e6ef;
+}
+
+.tech-table-container select {
+  padding: 8px;
+  border: 1px solid #dce3ed;
+  border-radius: 5px;
+  background: white;
+  color: #243047;
+}
+
+@media (max-width: 800px) {
+  .tech-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .tech-main {
+    padding: 20px;
+  }
+}
+
+/* Technician Selector */
+
+.technician-selector {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.technician-selector label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #52627d;
+}
+
+.technician-selector select {
+  padding: 10px 14px;
+  border: 1px solid #dce3ed;
+  border-radius: 6px;
+  background: white;
+  color: #243047;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.technician-selector select:focus {
+  outline: none;
+  border-color: #2864ed;
+}
+
+/* SLA Status Badges */
+
+.tech-sla-badge {
+  display: inline-block;
+  padding: 6px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.tech-sla-badge.within-sla,
+.tech-sla-badge.met {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.tech-sla-badge.breached {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.tech-sla-badge.not-set,
+.tech-sla-badge.resolution-time-unknown {
+  background: #f1f5f9;
+  color: #64748b;
+}
+
+/* Technician account and availability */
+
+.tech-availability-control {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 18px 20px;
+  margin-top: 24px;
+  border: 1px solid #34485b;
+  border-radius: 5px;
+  background: #19232f;
+  color: #d9e2ea;
+}
+
+.tech-availability-control strong {
+  font-size: 14px;
+}
+
+.tech-availability-control p {
+  margin: 6px 0 0;
+  color: #9baec0;
+  font-size: 12px;
+}
+
+.tech-availability-button,
+.tech-signout {
+  border: 1px solid #496078;
+  background: #25374b;
+  color: #d9e2ea;
+  padding: 10px 14px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.tech-signout {
+  width: 100%;
+  text-align: left;
+}
+
+.tech-demo-login {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  background: #111821;
+  color: #d9e2ea;
+  font-family: -apple-system, BlinkMacSystemFont,
+    "Segoe UI", Arial, sans-serif;
+}
+
+.tech-login-box {
+  width: min(400px, 92vw);
+  padding: 32px;
+  background: #19232f;
+  border: 1px solid #34485b;
+}
+
+.tech-login-box h1 {
+  font-size: 22px;
+}
+
+.tech-login-box h2 {
+  font-size: 18px;
+}
+
+.tech-login-box p {
+  color: #9baec0;
+  font-size: 13px;
+}
+
+.tech-login-box select,
+.tech-login-box button {
+  display: block;
+  width: 100%;
+  margin: 16px 0;
+  padding: 12px;
+  background: #25374b;
+  border: 1px solid #496078;
+  color: #d9e2ea;
+  border-radius: 4px;
+}
+
+.tech-login-box a {
+  color: #9ab6d0;
+  font-size: 12px;
+}
+
+@media (max-width: 650px) {
+  .tech-availability-control {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
