@@ -5,6 +5,11 @@ package com.itsm.dto;
 import com.itsm.enums.Impact;
 import com.itsm.enums.Urgency;
 import com.itsm.enums.IncidentCategory;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.Size;
 
 
 import java.util.List;
@@ -12,15 +17,24 @@ import java.util.List;
 
 public class CreateIncidentRequest {
 
+    @NotBlank
+    @Size(max = 255)
     private String title;
+    @NotBlank
     private String description;
 
+    @NotNull
     private IncidentCategory category;
+    @NotNull
     private Impact impact;
+    @NotNull
     private Urgency urgency;
 
+    @NotNull
+    @Positive
     private Long reporterId;
-    private List<Long> serviceIds;
+    @NotEmpty
+    private List<@NotNull @Positive Long> serviceIds;
 
     public String getTitle() {
         return title;

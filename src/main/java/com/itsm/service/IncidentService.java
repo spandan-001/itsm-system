@@ -1,14 +1,22 @@
 package com.itsm.service;
 
 import java.util.List;
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import com.itsm.enums.*;
 import com.itsm.model.ITService;
 import com.itsm.repository.EmployeeRepository;
 import com.itsm.repository.ITServiceRepository;
 import com.itsm.repository.IncidentRepository;
+import com.itsm.repository.TechnicianRepository;
 
 
 import com.itsm.model.Incident;
@@ -20,16 +28,81 @@ public class IncidentService {
     private final IncidentRepository incidentRepository;
     private final EmployeeRepository employeeRepository;
     private final ITServiceRepository itServiceRepository;
+    private final TechnicianRepository technicianRepository;
    
 
     public IncidentService(
         IncidentRepository incidentRepository,
         EmployeeRepository employeeRepository,
-        ITServiceRepository itServiceRepository) {
+        ITServiceRepository itServiceRepository,
+        TechnicianRepository technicianRepository) {
 
         this.incidentRepository = incidentRepository;
         this.employeeRepository = employeeRepository;
         this.itServiceRepository = itServiceRepository;
+        this.technicianRepository = technicianRepository;
+    }
+
+    public Page<Incident> listIncidents(Pageable pageable) {
+        return incidentRepository.findAll(pageable);
+    }
+
+    public Incident getIncident(Long id) {
+        return incidentRepository.findById(id)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Incident not found"));
+    }
+
+    @Transactional
+    public Incident assignTechnician(Long id, Long technicianId) {
+        Incident incident = getIncidentForUpdate(id);
+        if (incident.getStatus() == IncidentStatus.ASSIGNED
+                && incident.getAssignedTechnician() != null
+                && technicianId.equals(incident.getAssignedTechnician().getId())) {
+            return incident;
+        }
+        if (incident.getStatus() != IncidentStatus.CLASSIFIED) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Incident must be classified before assignment");
+        }
+
+        var technician = technicianRepository.findById(technicianId)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Technician not found"));
+        if (!technician.isAvailable()) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Technician is unavailable");
+        }
+
+        incident.setAssignedTechnician(technician);
+        incident.setStatus(IncidentStatus.ASSIGNED);
+        return incident;
+    }
+
+    @Transactional
+    public Incident updateStatus(Long id, IncidentStatus status) {
+        Incident incident = getIncidentForUpdate(id);
+        IncidentStatus current = incident.getStatus();
+        if (current == status) {
+            return incident;
+        }
+
+        IncidentStatus next = switch (current) {
+            case NEW -> IncidentStatus.CLASSIFIED;
+            case ASSIGNED -> IncidentStatus.ACKNOWLEDGED;
+            case ACKNOWLEDGED -> IncidentStatus.IN_PROGRESS;
+            case IN_PROGRESS -> IncidentStatus.RESOLVED;
+            case RESOLVED -> IncidentStatus.VERIFIED;
+            case VERIFIED -> IncidentStatus.CLOSED;
+            case CLASSIFIED, CLOSED -> null;
+        };
+        if (next != status || next == null) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                "Cannot change incident status from " + current + " to " + status);
+        }
+        incident.setStatus(status);
+        return incident;
+    }
+
+    private Incident getIncidentForUpdate(Long id) {
+        return incidentRepository.findLockedById(id)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Incident not found"));
     }
 
     // Convert Impact into a numerical score
@@ -107,15 +180,15 @@ public class IncidentService {
 
         // 1. Retrieve the existing employee
         Employee reporter = employeeRepository.findById(reporterId)
-            .orElseThrow(() -> new RuntimeException("Employee not found"));
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Employee not found"));
 
         // 2. Retrieve the affected IT services
-        List<ITService> affectedServices =
-            itServiceRepository.findAllById(serviceIds);
+        var uniqueServiceIds = new ArrayList<>(new LinkedHashSet<>(serviceIds));
+        List<ITService> affectedServices = itServiceRepository.findAllById(uniqueServiceIds);
 
         // 3. Validate that all services exist
-        if (affectedServices.size() != serviceIds.size()) {
-            throw new RuntimeException("One or more services were not found");
+        if (affectedServices.size() != uniqueServiceIds.size()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "One or more services were not found");
         }
 
         // 4. Calculate priority
