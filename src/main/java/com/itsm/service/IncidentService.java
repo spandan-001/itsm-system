@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -12,6 +13,11 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.itsm.enums.*;
+import com.itsm.event.IncidentAssignedEvent;
+import com.itsm.event.IncidentCreatedEvent;
+import com.itsm.event.IncidentEvent;
+import com.itsm.event.IncidentStatusChangedEvent;
+import com.itsm.service.sla.SlaService;
 import com.itsm.model.ITService;
 import com.itsm.repository.EmployeeRepository;
 import com.itsm.repository.ITServiceRepository;
@@ -29,18 +35,23 @@ public class IncidentService {
     private final EmployeeRepository employeeRepository;
     private final ITServiceRepository itServiceRepository;
     private final TechnicianRepository technicianRepository;
-   
+    private final SlaService slaService;
+    private final ApplicationEventPublisher eventPublisher;
 
     public IncidentService(
         IncidentRepository incidentRepository,
         EmployeeRepository employeeRepository,
         ITServiceRepository itServiceRepository,
-        TechnicianRepository technicianRepository) {
+        TechnicianRepository technicianRepository,
+        SlaService slaService,
+        ApplicationEventPublisher eventPublisher) {
 
         this.incidentRepository = incidentRepository;
         this.employeeRepository = employeeRepository;
         this.itServiceRepository = itServiceRepository;
         this.technicianRepository = technicianRepository;
+        this.slaService = slaService;
+        this.eventPublisher = eventPublisher;
     }
 
     public Page<Incident> listIncidents(Pageable pageable) {
@@ -70,8 +81,10 @@ public class IncidentService {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Technician is unavailable");
         }
 
+        IncidentStatus previous = incident.getStatus();
         incident.setAssignedTechnician(technician);
         incident.setStatus(IncidentStatus.ASSIGNED);
+        eventPublisher.publishEvent(new IncidentAssignedEvent(incident, previous, technician, IncidentEvent.SYSTEM_ACTOR));
         return incident;
     }
 
@@ -97,6 +110,7 @@ public class IncidentService {
                 "Cannot change incident status from " + current + " to " + status);
         }
         incident.setStatus(status);
+        eventPublisher.publishEvent(new IncidentStatusChangedEvent(incident, current, status, IncidentEvent.SYSTEM_ACTOR));
         return incident;
     }
 
@@ -169,6 +183,7 @@ public class IncidentService {
     }
 
 
+    @Transactional
     public Incident createIncident(
         String title,
         String description,
@@ -212,8 +227,13 @@ public class IncidentService {
         // 6. Set calculated priority
         incident.setPriority(priority);
 
-        // 7. Save to database
-        return incidentRepository.save(incident);
+        // 7. Set SLA response/resolution deadlines from the priority
+        slaService.applyDeadlines(incident);
+
+        // 8. Save, then notify observers (audit trail, notifications)
+        Incident saved = incidentRepository.save(incident);
+        eventPublisher.publishEvent(new IncidentCreatedEvent(saved, IncidentEvent.SYSTEM_ACTOR));
+        return saved;
     }
 }
 

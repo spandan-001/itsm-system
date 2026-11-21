@@ -73,7 +73,22 @@ public class Incident {
         inverseJoinColumns = @JoinColumn(name = "service_id")
     )
     private List<ITService> affectedServices = new ArrayList<>();
-    
+
+    // SLA tracking (set by SlaService, never directly by callers)
+    private LocalDateTime responseDueAt;
+
+    private LocalDateTime resolutionDueAt;
+
+    private LocalDateTime respondedAt;
+
+    private LocalDateTime resolvedAt;
+
+    @Column(nullable = false)
+    private boolean responseBreached;
+
+    @Column(nullable = false)
+    private boolean resolutionBreached;
+
 
     // Required by JPA
     protected Incident() {
@@ -201,5 +216,62 @@ public class Incident {
         this.affectedServices = affectedServices == null
                 ? new ArrayList<>()
                 : new ArrayList<>(affectedServices);
+    }
+
+    // SLA behaviour
+
+    public void applySlaDeadlines(LocalDateTime responseDueAt, LocalDateTime resolutionDueAt) {
+        this.responseDueAt = responseDueAt;
+        this.resolutionDueAt = resolutionDueAt;
+    }
+
+    /** Records the first response. Returns true if it came after the deadline. */
+    public boolean recordResponse(LocalDateTime at) {
+        if (respondedAt != null) {
+            return false;
+        }
+        respondedAt = at;
+        return responseDueAt != null && at.isAfter(responseDueAt);
+    }
+
+    /** Records the resolution. Returns true if it came after the deadline. */
+    public boolean recordResolution(LocalDateTime at) {
+        if (resolvedAt != null) {
+            return false;
+        }
+        resolvedAt = at;
+        return resolutionDueAt != null && at.isAfter(resolutionDueAt);
+    }
+
+    public void markResponseBreached() {
+        responseBreached = true;
+    }
+
+    public void markResolutionBreached() {
+        resolutionBreached = true;
+    }
+
+    public LocalDateTime getResponseDueAt() {
+        return responseDueAt;
+    }
+
+    public LocalDateTime getResolutionDueAt() {
+        return resolutionDueAt;
+    }
+
+    public LocalDateTime getRespondedAt() {
+        return respondedAt;
+    }
+
+    public LocalDateTime getResolvedAt() {
+        return resolvedAt;
+    }
+
+    public boolean isResponseBreached() {
+        return responseBreached;
+    }
+
+    public boolean isResolutionBreached() {
+        return resolutionBreached;
     }
 }
