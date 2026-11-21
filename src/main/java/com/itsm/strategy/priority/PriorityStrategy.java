@@ -8,10 +8,15 @@ import com.itsm.enums.Urgency;
 import com.itsm.model.ITService;
 import com.itsm.strategy.NamedStrategy;
 
-/** Strategy pattern: one way of turning impact, urgency and services into P1–P4. */
+/** Strategy pattern: one way of turning impact, urgency, services and affected users into P1–P4. */
 public interface PriorityStrategy extends NamedStrategy {
 
-    Priority calculate(Impact impact, Urgency urgency, List<ITService> affectedServices);
+    Priority calculate(PriorityFactors factors);
+
+    /** Convenience for a report affecting a single person. */
+    default Priority calculate(Impact impact, Urgency urgency, List<ITService> affectedServices) {
+        return calculate(new PriorityFactors(impact, urgency, affectedServices, 1));
+    }
 
     /** 1 for LOW, 2 for MEDIUM, 3 for HIGH: all three enums share this scale. */
     static int level(Enum<?> value) {

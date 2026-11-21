@@ -133,6 +133,19 @@ public class IncidentService {
             Urgency urgency,
             Long reporterId,
             List<Long> serviceIds) {
+        return createIncident(title, description, category, impact, urgency, reporterId, serviceIds, 1);
+    }
+
+    @Transactional
+    public Incident createIncident(
+            String title,
+            String description,
+            IncidentCategory category,
+            Impact impact,
+            Urgency urgency,
+            Long reporterId,
+            List<Long> serviceIds,
+            int affectedUsers) {
 
         Employee reporter = employeeRepository.findById(reporterId)
                 .orElseThrow(() -> new ResourceNotFoundException("Employee", reporterId));
@@ -144,7 +157,9 @@ public class IncidentService {
         }
 
         Incident incident = new Incident(title, description, category, impact, urgency, reporter, affectedServices);
-        incident.setPriority(priorityCalculator.calculate(impact, urgency, affectedServices));
+        incident.setAffectedUsers(affectedUsers);
+        incident.setPriority(priorityCalculator.calculate(
+                new com.itsm.strategy.priority.PriorityFactors(impact, urgency, affectedServices, affectedUsers)));
         // Before duplicate detection and routing, which both depend on the category.
         classificationService.classify(incident);
 

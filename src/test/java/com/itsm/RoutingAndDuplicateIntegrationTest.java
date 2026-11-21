@@ -103,6 +103,22 @@ class RoutingAndDuplicateIntegrationTest extends IntegrationTestSupport {
     }
 
     @Test
+    void affectedUsersFeedIntoThePriorityOfARealIncident() {
+        var portal = itServiceRepository.save(new com.itsm.model.ITService("Student Portal", "Web",
+                com.itsm.enums.BusinessCriticality.MEDIUM));
+        Incident one = incidentService.createIncident("Portal slow for me", "Pages load slowly",
+                IncidentCategory.APPLICATION, Impact.MEDIUM, Urgency.MEDIUM, reporter.getId(),
+                java.util.List.of(portal.getId()), 1);
+        Incident many = incidentService.createIncident("Registration portal slow for the whole batch",
+                "Every student registering today sees timeouts", IncidentCategory.APPLICATION, Impact.MEDIUM,
+                Urgency.MEDIUM, reporter.getId(), java.util.List.of(portal.getId()), 400);
+
+        assertThat(one.getPriority()).isEqualTo(Priority.P3);
+        assertThat(many.getPriority()).isEqualTo(Priority.P2);
+        assertThat(many.getAffectedUsers()).isEqualTo(400);
+    }
+
+    @Test
     void searchCombinesFilters() {
         reportWifiOutage();
         report("Printer offline", "Second floor printer is offline", IncidentCategory.HARDWARE,

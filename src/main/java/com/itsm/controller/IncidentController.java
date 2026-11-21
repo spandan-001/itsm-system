@@ -62,7 +62,8 @@ public class IncidentController {
             request.getImpact(),
             request.getUrgency(),
             account.id(),
-            request.getServiceIds()
+            request.getServiceIds(),
+            request.getAffectedUsers() == null ? 1 : request.getAffectedUsers()
         );
     }
 

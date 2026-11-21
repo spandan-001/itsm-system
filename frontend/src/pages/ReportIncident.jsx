@@ -41,6 +41,7 @@ export default function ReportIncident({ request }) {
       impact: form.get('impact'),
       urgency: form.get('urgency'),
       serviceIds: form.getAll('serviceIds').map(Number),
+      affectedUsers: Number(form.get('affectedUsers')) || 1,
     };
     setPending(true);
     setFailure(null);
@@ -85,6 +86,9 @@ export default function ReportIncident({ request }) {
           </span>}
         </div>
         <div className="form-row"><Choice name="impact" choices={levels} /><Choice name="urgency" choices={levels} /></div>
+        <label className="form-group">How many people are affected?
+          <input name="affectedUsers" type="number" min="1" max="1000000" defaultValue="1" required />
+        </label>
         <fieldset className="itsm-services">
           <legend>Affected services</legend>
           <label className="itsm-service-picker">

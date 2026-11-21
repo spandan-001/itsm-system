@@ -141,3 +141,6 @@ ALTER TABLE service_outages ENABLE ROW LEVEL SECURITY;
 
 ALTER TABLE incidents ADD COLUMN outage_id BIGINT REFERENCES service_outages (id) ON DELETE SET NULL;
 CREATE INDEX idx_incidents_outage_id ON incidents (outage_id);
+
+-- 13. Number of affected users (a priority factor)
+ALTER TABLE incidents ADD COLUMN affected_users INTEGER NOT NULL DEFAULT 1 CHECK (affected_users >= 1);

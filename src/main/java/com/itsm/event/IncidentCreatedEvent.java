@@ -25,7 +25,8 @@ public final class IncidentCreatedEvent extends IncidentEvent {
         Incident incident = getIncident();
         String text = "Incident reported by " + incident.getReporter().getName()
                 + " with priority " + incident.getPriority()
-                + " (impact " + incident.getImpact() + ", urgency " + incident.getUrgency() + ")";
+                + " (impact " + incident.getImpact() + ", urgency " + incident.getUrgency()
+                + ", " + incident.getAffectedUsers() + " affected " + (incident.getAffectedUsers() == 1 ? "user" : "users") + ")";
         if (incident.getSuggestedCategory() != null) {
             long percent = Math.round(incident.getClassificationConfidence() * 100);
             text += incident.isAutoReclassified()

@@ -22,8 +22,12 @@ public class PriorityCalculator {
         this.registry = new StrategyRegistry<>("priority", strategies, defaultStrategy);
     }
 
+    public Priority calculate(PriorityFactors factors) {
+        return registry.active().calculate(factors);
+    }
+
     public Priority calculate(Impact impact, Urgency urgency, List<ITService> affectedServices) {
-        return registry.active().calculate(impact, urgency, affectedServices);
+        return calculate(new PriorityFactors(impact, urgency, affectedServices, 1));
     }
 
     public StrategyRegistry<PriorityStrategy> strategies() {

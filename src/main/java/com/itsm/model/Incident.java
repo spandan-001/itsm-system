@@ -85,6 +85,9 @@ public class Incident {
 
     private Double duplicateScore;
 
+    @Column(nullable = false)
+    private int affectedUsers = 1;
+
     // Automatic categorisation (Naive Bayes)
     @Enumerated(EnumType.STRING)
     @Column(length = 40)
@@ -422,6 +425,17 @@ public class Incident {
 
     public Double getDuplicateScore() {
         return duplicateScore;
+    }
+
+    public int getAffectedUsers() {
+        return affectedUsers;
+    }
+
+    public void setAffectedUsers(int affectedUsers) {
+        if (affectedUsers < 1) {
+            throw new IllegalArgumentException("At least one user must be affected");
+        }
+        this.affectedUsers = affectedUsers;
     }
 
     // Classification behaviour
