@@ -18,11 +18,14 @@ import com.itsm.service.sla.SlaSnapshot;
 public class SlaController {
 
     private final SlaService slaService;
+    private final com.itsm.service.escalation.EscalationService escalationService;
     private final IncidentService incidentService;
     private final AccountService accounts;
 
-    public SlaController(SlaService slaService, IncidentService incidentService, AccountService accounts) {
+    public SlaController(SlaService slaService, IncidentService incidentService, AccountService accounts,
+                         com.itsm.service.escalation.EscalationService escalationService) {
         this.slaService = slaService;
+        this.escalationService = escalationService;
         this.incidentService = incidentService;
         this.accounts = accounts;
     }
@@ -54,6 +57,7 @@ public class SlaController {
     /** Runs breach detection now instead of waiting for the scheduler (handy for demos). */
     @PostMapping("/api/sla/check")
     public Map<String, Integer> checkNow() {
-        return Map.of("newWarnings", slaService.detectWarnings(), "newBreaches", slaService.detectBreaches());
+        return Map.of("newWarnings", slaService.detectWarnings(), "newBreaches", slaService.detectBreaches(),
+                "newEscalations", escalationService.escalate());
     }
 }

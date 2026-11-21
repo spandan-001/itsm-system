@@ -9,6 +9,7 @@ import jakarta.persistence.*;
 
 import com.itsm.enums.Priority;
 import com.itsm.enums.IncidentCategory;
+import com.itsm.enums.EscalationLevel;
 import com.itsm.enums.Impact;
 import com.itsm.enums.Urgency;
 import com.itsm.enums.IncidentStatus;
@@ -112,6 +113,13 @@ public class Incident {
     private String feedbackComment;
 
     private LocalDateTime feedbackAt;
+
+    // Escalation of unacknowledged critical incidents
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 30)
+    private EscalationLevel escalationLevel = EscalationLevel.NONE;
+
+    private LocalDateTime escalatedAt;
 
     // SLA early warnings, sent once per clock
     @Column(nullable = false)
@@ -447,6 +455,26 @@ public class Incident {
 
     public boolean isAutoReclassified() {
         return reportedCategory != null && reportedCategory != category;
+    }
+
+    // Escalation behaviour
+
+    /** Moves up the escalation chain; never down. Returns false if already at or above that level. */
+    public boolean escalateTo(EscalationLevel level) {
+        if (level.ordinal() <= escalationLevel.ordinal()) {
+            return false;
+        }
+        escalationLevel = level;
+        escalatedAt = LocalDateTime.now();
+        return true;
+    }
+
+    public EscalationLevel getEscalationLevel() {
+        return escalationLevel;
+    }
+
+    public LocalDateTime getEscalatedAt() {
+        return escalatedAt;
     }
 
     // Investigation, resolution and feedback behaviour

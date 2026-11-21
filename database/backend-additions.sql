@@ -120,3 +120,9 @@ ALTER TABLE incidents
     ADD COLUMN reported_category VARCHAR(40),
     ADD COLUMN suggested_category VARCHAR(40),
     ADD COLUMN classification_confidence DOUBLE PRECISION;
+
+-- 11. Escalation of unacknowledged critical incidents
+ALTER TABLE incidents
+    ADD COLUMN escalation_level VARCHAR(30) NOT NULL DEFAULT 'NONE'
+        CHECK (escalation_level IN ('NONE', 'TEAM_LEAD', 'SYSTEM_ADMINISTRATOR', 'IT_MANAGER')),
+    ADD COLUMN escalated_at TIMESTAMP;

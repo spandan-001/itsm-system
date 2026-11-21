@@ -78,6 +78,8 @@ export default function IncidentDetails({ request, account }) {
         <div><dt>Category</dt><dd>{label(item.category)}</dd></div>
         {item.resolutionSummary && <div><dt>Resolution</dt><dd>{item.resolutionSummary}</dd></div>}
       </dl>
+      {item.escalationLevel && item.escalationLevel !== 'NONE' && <p className="itsm-banner">
+        Escalated to {label(item.escalationLevel)} at {dateTime(item.escalatedAt)}: not acknowledged within the response target.</p>}
       {item.awaitingReporterInfo && <p className="itsm-banner">Waiting for more information from the reporter.</p>}
       {item.duplicateOfId && <p className="itsm-banner">Linked as a duplicate of incident #{item.duplicateOfId}.
         Updates on the original are shared with you.</p>}

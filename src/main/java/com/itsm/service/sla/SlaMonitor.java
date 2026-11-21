@@ -12,9 +12,11 @@ public class SlaMonitor {
     private static final Logger log = LoggerFactory.getLogger(SlaMonitor.class);
 
     private final SlaService slaService;
+    private final com.itsm.service.escalation.EscalationService escalationService;
 
-    public SlaMonitor(SlaService slaService) {
+    public SlaMonitor(SlaService slaService, com.itsm.service.escalation.EscalationService escalationService) {
         this.slaService = slaService;
+        this.escalationService = escalationService;
     }
 
     @Scheduled(initialDelayString = "${itsm.sla.initial-delay-ms:30000}",
@@ -22,8 +24,9 @@ public class SlaMonitor {
     public void checkForBreaches() {
         int warnings = slaService.detectWarnings();
         int breaches = slaService.detectBreaches();
-        if (warnings > 0 || breaches > 0) {
-            log.warn("SLA monitor raised {} warning(s) and {} breach(es)", warnings, breaches);
+        int escalations = escalationService.escalate();
+        if (warnings > 0 || breaches > 0 || escalations > 0) {
+            log.warn("SLA monitor raised {} warning(s), {} breach(es), {} escalation(s)", warnings, breaches, escalations);
         }
     }
 }

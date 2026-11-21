@@ -16,6 +16,7 @@ import com.itsm.event.FeedbackReceivedEvent;
 import com.itsm.event.IncidentNoteAddedEvent;
 import com.itsm.event.SlaWarningEvent;
 import com.itsm.event.IncidentAssignedEvent;
+import com.itsm.event.IncidentEscalatedEvent;
 import com.itsm.event.IncidentCreatedEvent;
 import com.itsm.event.IncidentEvent;
 import com.itsm.event.IncidentStatusChangedEvent;
@@ -120,6 +121,17 @@ public class NotificationEventListener {
                 if (technician != null) {
                     messages.add(new Message(technician, ref + " feedback: " + incident.getFeedbackRating() + "/5",
                             feedback.describe()));
+                }
+            }
+            case IncidentEscalatedEvent escalated -> {
+                String text = incident.getPriority() + " incident \"" + incident.getTitle()
+                        + "\" has not been acknowledged since " + incident.getCreatedAt()
+                        + " (response was due " + incident.getResponseDueAt() + "). It is now escalated to you as "
+                        + escalated.getTo() + ".";
+                messages.add(new Message(escalated.getContact(), ref + " escalated to " + escalated.getTo(), text));
+                if (technician != null) {
+                    messages.add(new Message(technician, ref + " escalated to " + escalated.getTo(),
+                            "Please acknowledge this " + incident.getPriority() + " incident now."));
                 }
             }
             case SlaBreachedEvent breached -> {

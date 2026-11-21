@@ -64,6 +64,16 @@ public interface IncidentRepository extends JpaRepository<Incident, Long>, JpaSp
 
     List<Incident> findByDuplicateOf_Id(Long originalId);
 
+    /** Unacknowledged, non-duplicate incidents that could still escalate. */
+    @Query("""
+            select i.id from Incident i
+            where i.respondedAt is null and i.responseDueAt is not null and i.duplicateOf is null
+              and i.priority in :priorities and i.status in :statuses
+              and i.escalationLevel <> com.itsm.enums.EscalationLevel.IT_MANAGER
+            order by i.id""")
+    List<Long> findEscalationCandidateIds(@Param("priorities") Collection<com.itsm.enums.Priority> priorities,
+                                          @Param("statuses") Collection<IncidentStatus> statuses);
+
     // Suggested resolutions: incidents with a recorded fix
     List<Incident> findByResolutionSummaryIsNotNullAndDuplicateOfIsNull();
 

@@ -9,5 +9,6 @@ public enum AuditAction {
     DUPLICATE_UNLINKED,
     NOTE_ADDED,
     SLA_WARNING,
-    FEEDBACK_RECEIVED
+    FEEDBACK_RECEIVED,
+    ESCALATED
 }

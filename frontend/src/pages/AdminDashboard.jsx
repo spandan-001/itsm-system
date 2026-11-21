@@ -57,6 +57,7 @@ export default function AdminDashboard({ request }) {
         <div className="admin-stat-card"><dt><DashboardIcon name="clock" />Queued</dt><dd>{summary.data.queuedIncidents}</dd></div>
         <div className="admin-stat-card"><dt><DashboardIcon name="clock" />SLA breached</dt><dd>{summary.data.slaBreachedIncidents}</dd></div>
         <div className="admin-stat-card"><dt><DashboardIcon name="laptop" />Critical open (P1)</dt><dd>{summary.data.criticalOpenIncidents}</dd></div>
+        <div className="admin-stat-card"><dt><DashboardIcon name="bell" />Escalated (open)</dt><dd>{summary.data.escalatedOpenIncidents}</dd></div>
         <div className="admin-stat-card"><dt><DashboardIcon name="bell" />Waiting on reporter</dt><dd>{summary.data.awaitingReporterInfo}</dd></div>
         <div className="admin-stat-card"><dt><DashboardIcon name="check" />SLA compliance</dt>
           <dd>{summary.data.slaCompliancePercent == null ? '—' : `${summary.data.slaCompliancePercent}%`}</dd></div>
@@ -95,6 +96,7 @@ export default function AdminDashboard({ request }) {
               <td><Link to={`/incidents/${item.id}`}>#{item.id} {item.title}</Link> · {item.priority}
                 {item.duplicateOfId && <span className="itsm-badge">duplicate of #{item.duplicateOfId}</span>}
                 {item.awaitingReporterInfo && <span className="itsm-badge">waiting on reporter</span>}
+                {item.escalationLevel && item.escalationLevel !== 'NONE' && <span className="itsm-badge">escalated: {label(item.escalationLevel)}</span>}
               </td><td>{label(item.status)}</td><td>{dateTime(item.resolutionDueAt)}</td>
               <td>{assignable.has(item.status) && technicians.data ? (
                 <select aria-label={`Assign technician for incident ${item.id}`}

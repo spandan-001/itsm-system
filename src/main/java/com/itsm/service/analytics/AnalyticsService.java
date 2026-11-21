@@ -84,6 +84,8 @@ public class AnalyticsService {
                 resolved.size(),
                 all.stream().filter(Incident::isAwaitingReporterInfo).count(),
                 ratings.getCount() == 0 ? null : round(ratings.getAverage()),
+                all.stream().filter(i -> i.getEscalationLevel() != com.itsm.enums.EscalationLevel.NONE
+                        && !IncidentStates.closedStatuses().contains(i.getStatus())).count(),
                 compliance,
                 resolved.isEmpty() ? null
                         : round(resolved.stream().mapToLong(AnalyticsService::resolutionMinutes).average().orElse(0)),
