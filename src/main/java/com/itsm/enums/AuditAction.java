@@ -4,5 +4,7 @@ public enum AuditAction {
     CREATED,
     ASSIGNED,
     STATUS_CHANGED,
-    SLA_BREACHED
+    SLA_BREACHED,
+    DUPLICATE_LINKED,
+    DUPLICATE_UNLINKED
 }

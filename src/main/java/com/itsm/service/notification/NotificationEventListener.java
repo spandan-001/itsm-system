@@ -10,12 +10,14 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
+import com.itsm.event.DuplicateLinkEvent;
 import com.itsm.event.IncidentAssignedEvent;
 import com.itsm.event.IncidentCreatedEvent;
 import com.itsm.event.IncidentEvent;
 import com.itsm.event.IncidentStatusChangedEvent;
 import com.itsm.event.SlaBreachedEvent;
 import com.itsm.model.Incident;
+import com.itsm.repository.IncidentRepository;
 
 /**
  * Observer that decides who hears about each incident event. It runs only
@@ -29,9 +31,12 @@ public class NotificationEventListener {
     private static final Logger log = LoggerFactory.getLogger(NotificationEventListener.class);
 
     private final NotificationService notificationService;
+    private final IncidentRepository incidentRepository;
 
-    public NotificationEventListener(NotificationService notificationService) {
+    public NotificationEventListener(NotificationService notificationService,
+                                     IncidentRepository incidentRepository) {
         this.notificationService = notificationService;
+        this.incidentRepository = incidentRepository;
     }
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT, fallbackExecution = true)
@@ -58,10 +63,24 @@ public class NotificationEventListener {
                         ref + " assigned",
                         assigned.getTechnician().getName() + " is now working on your incident."));
             }
-            case IncidentStatusChangedEvent changed -> messages.add(new Message(reporter,
-                    ref + " is now " + changed.getToStatus(),
-                    "\"" + incident.getTitle() + "\" moved from " + changed.getFromStatus()
-                            + " to " + changed.getToStatus() + "."));
+            case IncidentStatusChangedEvent changed -> {
+                String text = "\"" + incident.getTitle() + "\" moved from " + changed.getFromStatus()
+                        + " to " + changed.getToStatus() + ".";
+                messages.add(new Message(reporter, ref + " is now " + changed.getToStatus(), text));
+                // People whose reports were merged into this one follow its progress too.
+                for (Incident duplicate : incidentRepository.findByDuplicateOf_Id(incident.getId())) {
+                    messages.add(new Message(Recipient.of(duplicate.getReporter()),
+                            "Incident #" + duplicate.getId() + " (linked to #" + incident.getId() + ") is now "
+                                    + changed.getToStatus(), text));
+                }
+            }
+            case DuplicateLinkEvent link -> messages.add(new Message(reporter,
+                    link.isLinked() ? ref + " linked to an existing incident" : ref + " reopened as a separate incident",
+                    link.isLinked()
+                            ? "Your report matches incident #" + link.getOriginal().getId() + " (\""
+                                    + link.getOriginal().getTitle() + "\"), which is already being handled."
+                                    + " You will be updated as it progresses."
+                            : "Your report is now tracked on its own with priority " + incident.getPriority() + "."));
             case SlaBreachedEvent breached -> {
                 String text = breached.getSlaType() + " SLA for \"" + incident.getTitle() + "\" ("
                         + incident.getPriority() + ") was breached. Deadline: " + breached.getDeadline() + ".";

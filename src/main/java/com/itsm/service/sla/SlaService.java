@@ -23,6 +23,7 @@ import com.itsm.repository.SlaPolicyRepository;
 /**
  * Calculates SLA deadlines, stops the clocks on lifecycle transitions and
  * detects breaches. Response is measured to ACKNOWLEDGED; resolution to RESOLVED.
+ * Duplicates have no deadlines of their own, so they are never flagged.
  */
 @Service
 public class SlaService {
@@ -90,6 +91,9 @@ public class SlaService {
                 && incident.recordResponse(now) && !incident.isResponseBreached()) {
             incident.markResponseBreached();
             eventPublisher.publishEvent(new SlaBreachedEvent(incident, SlaType.RESPONSE, incident.getResponseDueAt()));
+        }
+        if (newStatus == IncidentStatus.IN_PROGRESS && incident.getResolvedAt() != null) {
+            incident.clearResolution(); // reopened: resolution clock runs again
         }
         if (newStatus == IncidentStatus.RESOLVED
                 && incident.recordResolution(now) && !incident.isResolutionBreached()) {

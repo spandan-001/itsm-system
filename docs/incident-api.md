@@ -4,7 +4,7 @@ Base path `/api/incidents`. Requests with a body use `Content-Type: application/
 
 | Method and path | Request | Success response |
 | --- | --- | --- |
-| `POST /api/incidents` | Incident fields shown below | `200` with the created incident, including its calculated priority and `NEW` status |
+| `POST /api/incidents` | Incident fields shown below | `200` with the created incident, including its calculated priority. It is classified and routed automatically, so it is usually `ASSIGNED` (or `QUEUED`, or `NEW` with `duplicateOfId` if it was detected as a duplicate) |
 | `GET /api/incidents?page=0&size=20` | Zero-based page and page size. Defaults to newest ID first. | `200` with a `content` array and `page` metadata (`number`, `size`, `totalElements`, `totalPages`) |
 | `GET /api/incidents/{id}` | Incident ID | `200` with the incident |
 | `PUT /api/incidents/{id}/assignment` | `{"technicianId": 1}` | `200` with the incident in `ASSIGNED` status |
@@ -30,9 +30,9 @@ Incident responses include `id`, `title`, `description`, `category`, `impact`, `
 
 ## Move an incident through the workflow
 
-`NEW → CLASSIFIED → ASSIGNED → ACKNOWLEDGED → IN_PROGRESS → RESOLVED → VERIFIED → CLOSED`
+`NEW → CLASSIFIED → (QUEUED →) ASSIGNED → ACKNOWLEDGED → IN_PROGRESS → RESOLVED → VERIFIED → CLOSED`, plus `RESOLVED → IN_PROGRESS` to reopen.
 
-Use the assignment endpoint to move a classified incident to `ASSIGNED`. The technician must be available. Use the status endpoint for every other transition.
+New incidents are classified and routed automatically (see [backend-design.md](backend-design.md)). Use the assignment endpoint to assign or reassign a `CLASSIFIED`, `QUEUED` or `ASSIGNED` incident manually. The technician must be available. Use the status endpoint for every other transition. Incident responses include `allowedTransitions`.
 
 The API returns `400` for invalid request fields, `404` for missing records, and `409` for unavailable technicians or invalid workflow transitions.
 

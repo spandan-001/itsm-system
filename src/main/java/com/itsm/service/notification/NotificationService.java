@@ -3,13 +3,12 @@ package com.itsm.service.notification;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
 
 import com.itsm.enums.NotificationChannel;
+import com.itsm.exception.ResourceNotFoundException;
 import com.itsm.model.Notification;
 import com.itsm.repository.NotificationRepository;
 
@@ -55,7 +54,7 @@ public class NotificationService {
     @Transactional
     public Notification markRead(Long id) {
         Notification notification = notificationRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Notification not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Notification", id));
         notification.markRead();
         return notification;
     }

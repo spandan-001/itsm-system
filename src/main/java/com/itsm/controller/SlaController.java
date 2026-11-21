@@ -4,9 +4,7 @@ import java.util.List;
 import java.util.Map;
 
 import jakarta.validation.Valid;
-import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.server.ResponseStatusException;
 
 import com.itsm.dto.SlaPolicyResponse;
 import com.itsm.dto.UpdateSlaPolicyRequest;
@@ -34,12 +32,9 @@ public class SlaController {
     @PutMapping("/api/sla/policies/{priority}")
     public SlaPolicyResponse updatePolicy(@PathVariable Priority priority,
                                           @Valid @RequestBody UpdateSlaPolicyRequest request) {
-        try {
-            return SlaPolicyResponse.from(slaService.updatePolicy(
-                    priority, request.responseMinutes(), request.resolutionMinutes()));
-        } catch (IllegalArgumentException ex) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage());
-        }
+        // An invalid combination throws IllegalArgumentException, mapped to 400.
+        return SlaPolicyResponse.from(slaService.updatePolicy(
+                priority, request.responseMinutes(), request.resolutionMinutes()));
     }
 
     @GetMapping("/api/incidents/{id}/sla")

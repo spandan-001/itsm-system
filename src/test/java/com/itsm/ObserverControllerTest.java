@@ -14,7 +14,8 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
-@SpringBootTest(properties = "itsm.sla.initial-delay-ms=3600000")
+@SpringBootTest
+@org.springframework.test.context.ActiveProfiles("test")
 class ObserverControllerTest {
 
     @Autowired WebApplicationContext context;
