@@ -20,10 +20,12 @@ public interface IncidentRepository extends JpaRepository<Incident, Long>, JpaSp
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     Optional<Incident> findLockedById(Long id);
 
-    // SLA breach detection: open clocks whose deadline has passed and are not yet flagged
-    List<Incident> findByRespondedAtIsNullAndResponseBreachedFalseAndResponseDueAtBefore(LocalDateTime now);
-
-    List<Incident> findByResolvedAtIsNullAndResolutionBreachedFalseAndResolutionDueAtBefore(LocalDateTime now);
+    @Query("""
+            select i.id from Incident i
+            where (i.respondedAt is null and i.responseBreached = false and i.responseDueAt < :now)
+               or (i.resolvedAt is null and i.resolutionBreached = false and i.resolutionDueAt < :now)
+            order by i.id""")
+    List<Long> findOverdueIds(@Param("now") LocalDateTime now);
 
     List<Incident> findByResponseBreachedTrueOrResolutionBreachedTrue();
 

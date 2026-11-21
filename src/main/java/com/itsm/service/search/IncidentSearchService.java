@@ -7,6 +7,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.itsm.model.Incident;
 import com.itsm.repository.IncidentRepository;
+import com.itsm.service.AccountService.LinkedAccount;
 
 @Service
 public class IncidentSearchService {
@@ -15,6 +16,12 @@ public class IncidentSearchService {
 
     public IncidentSearchService(IncidentRepository incidentRepository) {
         this.incidentRepository = incidentRepository;
+    }
+
+    @Transactional(readOnly = true)
+    public Page<Incident> search(IncidentSearchCriteria criteria, Pageable pageable, LinkedAccount account) {
+        return incidentRepository.findAll(IncidentSpecifications.visibleTo(account)
+                .and(IncidentSpecifications.matching(criteria)), pageable);
     }
 
     @Transactional(readOnly = true)

@@ -71,14 +71,15 @@ public class NotificationEventListener {
                 for (Incident duplicate : incidentRepository.findByDuplicateOf_Id(incident.getId())) {
                     messages.add(new Message(Recipient.of(duplicate.getReporter()),
                             "Incident #" + duplicate.getId() + " (linked to #" + incident.getId() + ") is now "
-                                    + changed.getToStatus(), text));
+                                    + changed.getToStatus(),
+                            "The incident linked to your report moved to " + changed.getToStatus() + "."));
                 }
             }
             case DuplicateLinkEvent link -> messages.add(new Message(reporter,
                     link.isLinked() ? ref + " linked to an existing incident" : ref + " reopened as a separate incident",
                     link.isLinked()
-                            ? "Your report matches incident #" + link.getOriginal().getId() + " (\""
-                                    + link.getOriginal().getTitle() + "\"), which is already being handled."
+                            ? "Your report matches incident #" + link.getOriginal().getId()
+                                    + ", which is already being handled."
                                     + " You will be updated as it progresses."
                             : "Your report is now tracked on its own with priority " + incident.getPriority() + "."));
             case SlaBreachedEvent breached -> {

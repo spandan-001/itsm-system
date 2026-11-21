@@ -52,8 +52,9 @@ public class NotificationService {
     }
 
     @Transactional
-    public Notification markRead(Long id) {
+    public Notification markRead(Long id, String email) {
         Notification notification = notificationRepository.findById(id)
+                .filter(entry -> email.equalsIgnoreCase(entry.getRecipientEmail()))
                 .orElseThrow(() -> new ResourceNotFoundException("Notification", id));
         notification.markRead();
         return notification;

@@ -5,6 +5,7 @@ package com.itsm.dto;
 import com.itsm.enums.Impact;
 import com.itsm.enums.Urgency;
 import com.itsm.enums.IncidentCategory;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
@@ -15,6 +16,7 @@ import jakarta.validation.constraints.Size;
 import java.util.List;
 
 
+@JsonIgnoreProperties("reporterId")
 public class CreateIncidentRequest {
 
     @NotBlank
@@ -30,9 +32,6 @@ public class CreateIncidentRequest {
     @NotNull
     private Urgency urgency;
 
-    @NotNull
-    @Positive
-    private Long reporterId;
     @NotEmpty
     private List<@NotNull @Positive Long> serviceIds;
 
@@ -65,12 +64,6 @@ public class CreateIncidentRequest {
     }
     public void setUrgency(Urgency urgency) {
         this.urgency = urgency;
-    }
-    public Long getReporterId() {
-        return reporterId;
-    }
-    public void setReporterId(Long reporterId) {
-        this.reporterId = reporterId;
     }
     public List<Long> getServiceIds() {
         return serviceIds;

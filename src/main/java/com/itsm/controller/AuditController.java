@@ -10,6 +10,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.itsm.service.AccountService;
+
 import com.itsm.dto.AuditLogResponse;
 import com.itsm.service.IncidentService;
 import com.itsm.service.audit.AuditService;
@@ -19,16 +21,18 @@ public class AuditController {
 
     private final AuditService auditService;
     private final IncidentService incidentService;
+    private final AccountService accounts;
 
-    public AuditController(AuditService auditService, IncidentService incidentService) {
+    public AuditController(AuditService auditService, IncidentService incidentService, AccountService accounts) {
         this.auditService = auditService;
         this.incidentService = incidentService;
+        this.accounts = accounts;
     }
 
     /** Chronological audit trail for one incident. */
     @GetMapping("/api/incidents/{id}/audit")
     public List<AuditLogResponse> incidentTrail(@PathVariable Long id) {
-        incidentService.getIncident(id); // 404 if missing
+        incidentService.getIncident(id, accounts.requireCurrentAccount()); // 404 if missing
         return auditService.trailFor(id).stream().map(AuditLogResponse::from).toList();
     }
 

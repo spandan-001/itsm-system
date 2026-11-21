@@ -1,5 +1,6 @@
 package com.itsm;
 
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -10,19 +11,25 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
+
+import com.itsm.model.AccountLink.Role;
+import com.itsm.service.AccountService;
 
 @SpringBootTest
 @org.springframework.test.context.ActiveProfiles("test")
 class ObserverControllerTest {
 
     @Autowired WebApplicationContext context;
+    @MockitoBean AccountService accounts;
     MockMvc mvc;
 
     @BeforeEach
     void setUp() {
+        when(accounts.requireCurrentAccount()).thenReturn(new AccountService.LinkedAccount(Role.EMPLOYEE, 1L, "employee@example.test"));
         mvc = MockMvcBuilders.webAppContextSetup(context).build();
     }
 

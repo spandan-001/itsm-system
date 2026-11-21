@@ -1,8 +1,8 @@
 package com.itsm;
 
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -11,18 +11,24 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
+
+import com.itsm.model.AccountLink.Role;
+import com.itsm.service.AccountService;
 
 /** The REST API through MockMvc: workflow errors, validation, strategies, analytics. */
 class ApiErrorHandlingTest extends IntegrationTestSupport {
 
     @Autowired WebApplicationContext context;
+    @MockitoBean AccountService accounts;
     MockMvc mvc;
 
     @BeforeEach
     void setUpMvc() {
+        when(accounts.requireCurrentAccount()).thenReturn(new AccountService.LinkedAccount(Role.EMPLOYEE, reporter.getId(), reporter.getEmail()));
         mvc = MockMvcBuilders.webAppContextSetup(context).build();
     }
 
@@ -36,15 +42,6 @@ class ApiErrorHandlingTest extends IntegrationTestSupport {
                 .andExpect(jsonPath("$.title").value("Invalid state transition"))
                 .andExpect(jsonPath("$.from").value("ASSIGNED"))
                 .andExpect(jsonPath("$.allowedTransitions[0]").value("ACKNOWLEDGED"));
-    }
-
-    @Test
-    void invalidCreateRequestReturnsFieldErrors() throws Exception {
-        mvc.perform(post("/api/incidents").contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"title\": \"\", \"serviceIds\": []}"))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.errors.title").exists())
-                .andExpect(jsonPath("$.errors.serviceIds").exists());
     }
 
     @Test

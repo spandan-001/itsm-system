@@ -1,11 +1,14 @@
 package com.itsm.config;
 
+import java.util.Set;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
+import org.springframework.security.authorization.AuthorizationDecision;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -14,6 +17,7 @@ import org.springframework.security.oauth2.core.DelegatingOAuth2TokenValidator;
 import org.springframework.security.oauth2.core.OAuth2Error;
 import org.springframework.security.oauth2.core.OAuth2TokenValidatorResult;
 import org.springframework.security.oauth2.jose.jws.SignatureAlgorithm;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.JwtValidators;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
@@ -24,9 +28,27 @@ import org.springframework.security.web.SecurityFilterChain;
 public class SupabaseSecurityConfig {
 
     @Bean
-    SecurityFilterChain accountSecurity(HttpSecurity http) {
-        return http.securityMatcher("/api/me")
-                .authorizeHttpRequests(requests -> requests.anyRequest().authenticated())
+    SecurityFilterChain apiSecurity(HttpSecurity http,
+                                    @Value("${itsm.auth.admin-user-ids:}") Set<UUID> admins) {
+        return http.securityMatcher("/api/**")
+                .authorizeHttpRequests(requests -> requests
+                        .requestMatchers(HttpMethod.GET, "/api/me", "/api/services", "/api/incidents",
+                                "/api/incidents/search", "/api/incidents/{id:[0-9]+}", "/api/incidents/{id}/audit",
+                                "/api/incidents/{id}/sla", "/api/notifications",
+                                "/api/notifications/unread-count", "/api/incidents/{id}/notifications",
+                                "/api/sla/policies").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/api/incidents").authenticated()
+                        .requestMatchers(HttpMethod.PATCH, "/api/incidents/{id}/status",
+                                "/api/notifications/{id}/read").authenticated()
+                        .requestMatchers("/api/audit", "/api/analytics/**", "/api/routing/**",
+                                "/api/technicians/**", "/api/strategies/**", "/api/sla/**",
+                                "/api/incidents/similar", "/api/incidents/{id}/assignment",
+                                "/api/incidents/{id}/recommendations", "/api/incidents/{id}/duplicates",
+                                "/api/incidents/{id}/not-duplicate")
+                        .access((authentication, context) -> new AuthorizationDecision(
+                                authentication.get().getPrincipal() instanceof Jwt jwt
+                                        && admins.contains(UUID.fromString(jwt.getSubject()))))
+                        .anyRequest().denyAll())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .csrf(AbstractHttpConfigurer::disable)
                 .oauth2ResourceServer(oauth -> oauth.jwt(Customizer.withDefaults()))

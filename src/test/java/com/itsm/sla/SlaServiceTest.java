@@ -121,13 +121,14 @@ class SlaServiceTest {
     void detectBreachesFlagsOverdueIncidents() {
         Incident overdue = TestData.incident(Priority.P1);
         LocalDateTime now = LocalDateTime.now().plusHours(5);
-        when(incidentRepository.findByRespondedAtIsNullAndResponseBreachedFalseAndResponseDueAtBefore(now))
-                .thenReturn(List.of(overdue));
-        when(incidentRepository.findByResolvedAtIsNullAndResolutionBreachedFalseAndResolutionDueAtBefore(now))
-                .thenReturn(List.of(overdue));
+        SlaService service = serviceAt(now);
+        service.applyDeadlines(overdue);
+        when(incidentRepository.findOverdueIds(now)).thenReturn(List.of(1L));
+        when(incidentRepository.findLockedById(1L)).thenReturn(Optional.of(overdue));
 
-        int count = serviceAt(now).detectBreaches(now);
+        int count = service.detectBreaches(now);
 
+        assertThat(service.detectBreaches(now)).isZero();
         assertThat(count).isEqualTo(2);
         assertThat(overdue.isResponseBreached()).isTrue();
         assertThat(overdue.isResolutionBreached()).isTrue();

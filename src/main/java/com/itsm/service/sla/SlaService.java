@@ -116,19 +116,32 @@ public class SlaService {
     @Transactional
     public int detectBreaches(LocalDateTime now) {
         int count = 0;
-        for (Incident incident : incidentRepository
-                .findByRespondedAtIsNullAndResponseBreachedFalseAndResponseDueAtBefore(now)) {
-            incident.markResponseBreached();
-            eventPublisher.publishEvent(new SlaBreachedEvent(incident, SlaType.RESPONSE, incident.getResponseDueAt()));
-            count++;
-        }
-        for (Incident incident : incidentRepository
-                .findByResolvedAtIsNullAndResolutionBreachedFalseAndResolutionDueAtBefore(now)) {
-            incident.markResolutionBreached();
-            eventPublisher.publishEvent(new SlaBreachedEvent(incident, SlaType.RESOLUTION, incident.getResolutionDueAt()));
-            count++;
+        for (Long id : incidentRepository.findOverdueIds(now)) {
+            var candidate = incidentRepository.findLockedById(id);
+            if (candidate.isEmpty()) {
+                continue;
+            }
+            Incident incident = candidate.get();
+            if (incident.getRespondedAt() == null && !incident.isResponseBreached()
+                    && overdue(incident.getResponseDueAt(), now)) {
+                incident.markResponseBreached();
+                eventPublisher.publishEvent(new SlaBreachedEvent(
+                        incident, SlaType.RESPONSE, incident.getResponseDueAt()));
+                count++;
+            }
+            if (incident.getResolvedAt() == null && !incident.isResolutionBreached()
+                    && overdue(incident.getResolutionDueAt(), now)) {
+                incident.markResolutionBreached();
+                eventPublisher.publishEvent(new SlaBreachedEvent(
+                        incident, SlaType.RESOLUTION, incident.getResolutionDueAt()));
+                count++;
+            }
         }
         return count;
+    }
+
+    private boolean overdue(LocalDateTime deadline, LocalDateTime now) {
+        return deadline != null && deadline.isBefore(now);
     }
 
     @Transactional(readOnly = true)

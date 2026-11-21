@@ -36,10 +36,10 @@ SLA states: `ON_TRACK`, `AT_RISK` (75% of the window used), `BREACHED`, `MET`, `
 | --- | --- |
 | `GET /api/incidents/{id}/audit` | Chronological audit trail for an incident |
 | `GET /api/audit?page=0&size=50` | All audit entries, newest first (paged) |
-| `GET /api/notifications?email=...` | A user's notifications, newest first |
-| `GET /api/notifications/unread-count?email=...` | `{"unread": n}` for the in-app inbox |
+| `GET /api/notifications` | The signed-in account's notifications, newest first |
+| `GET /api/notifications/unread-count` | `{"unread": n}` for the signed-in account's in-app inbox |
 | `PATCH /api/notifications/{id}/read` | Marks a notification read |
-| `GET /api/incidents/{id}/notifications` | Every notification sent about an incident |
+| `GET /api/incidents/{id}/notifications` | The signed-in account's notifications for an incident it can view |
 | `GET /api/incidents/{id}/sla` | SLA snapshot: deadlines, states, minutes left |
 | `GET /api/sla/breaches` | Incidents with a breached SLA |
 | `GET /api/sla/policies` | Targets for P1–P4 |
@@ -48,7 +48,10 @@ SLA states: `ON_TRACK`, `AT_RISK` (75% of the window used), `BREACHED`, `MET`, `
 
 Incident responses now also include `responseDueAt`, `resolutionDueAt`, `respondedAt`, `resolvedAt`, `responseBreached` and `resolutionBreached`.
 
-The `?email=` parameter is temporary. Once sign-in is integrated, the inbox should use the signed-in user.
+Send a Supabase bearer token. The inbox uses the email from the linked ITSM
+account. Audit rows record the signed-in user's Supabase UUID or `system` for
+background actions. Global audit, SLA breach lists, manual SLA checks, and SLA
+policy changes require administrative access. See the [API handoff](incident-api.md).
 
 ## Schema changes (for the Supabase schema)
 

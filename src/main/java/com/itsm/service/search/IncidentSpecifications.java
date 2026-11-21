@@ -8,11 +8,18 @@ import jakarta.persistence.criteria.Predicate;
 import org.springframework.data.jpa.domain.Specification;
 
 import com.itsm.model.Incident;
+import com.itsm.model.AccountLink.Role;
+import com.itsm.service.AccountService.LinkedAccount;
 
 /** Builds a JPA Specification (dynamic WHERE clause) from search criteria. */
 public final class IncidentSpecifications {
 
     private IncidentSpecifications() {
+    }
+
+    public static Specification<Incident> visibleTo(LinkedAccount account) {
+        String owner = account.role() == Role.EMPLOYEE ? "reporter" : "assignedTechnician";
+        return (root, query, cb) -> cb.equal(root.get(owner).get("id"), account.id());
     }
 
     public static Specification<Incident> matching(IncidentSearchCriteria c) {

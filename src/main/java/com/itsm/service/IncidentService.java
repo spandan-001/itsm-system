@@ -8,9 +8,9 @@ import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -91,13 +91,16 @@ public class IncidentService {
 
     // ---- Queries ----
 
-    public Page<Incident> listIncidents(Pageable pageable) {
-        return incidentRepository.findAll(pageable);
-    }
-
     public Incident getIncident(Long id) {
         return incidentRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Incident", id));
+    }
+
+    @Transactional(readOnly = true)
+    public Incident getIncident(Long id, AccountService.LinkedAccount account) {
+        Incident incident = getIncident(id);
+        account.requireAccess(incident);
+        return incident;
     }
 
     /** Incidents linked to this one as duplicates. */
@@ -226,7 +229,10 @@ public class IncidentService {
      */
     @Transactional
     public Incident updateStatus(Long id, IncidentStatus status) {
-        Incident incident = getIncidentForUpdate(id);
+        return updateStatus(getIncidentForUpdate(id), status);
+    }
+
+    private Incident updateStatus(Incident incident, IncidentStatus status) {
         if (incident.getStatus() == status) {
             return incident;
         }
@@ -235,6 +241,21 @@ public class IncidentService {
         }
         transition(incident, status);
         return incident;
+    }
+
+    @Transactional
+    public Incident updateStatus(Long id, IncidentStatus status, AccountService.LinkedAccount account) {
+        Incident incident = getIncidentForUpdate(id);
+        account.requireAccess(incident);
+        boolean allowed = switch (account.role()) {
+            case EMPLOYEE -> status == IncidentStatus.VERIFIED || status == IncidentStatus.CLOSED;
+            case TECHNICIAN -> status == IncidentStatus.ACKNOWLEDGED
+                    || status == IncidentStatus.IN_PROGRESS || status == IncidentStatus.RESOLVED;
+        };
+        if (!allowed) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "This role cannot set the requested status");
+        }
+        return updateStatus(incident, status);
     }
 
     private void transition(Incident incident, IncidentStatus target) {

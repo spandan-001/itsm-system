@@ -10,6 +10,7 @@ import com.itsm.dto.SlaPolicyResponse;
 import com.itsm.dto.UpdateSlaPolicyRequest;
 import com.itsm.enums.Priority;
 import com.itsm.service.IncidentService;
+import com.itsm.service.AccountService;
 import com.itsm.service.sla.SlaService;
 import com.itsm.service.sla.SlaSnapshot;
 
@@ -18,14 +19,17 @@ public class SlaController {
 
     private final SlaService slaService;
     private final IncidentService incidentService;
+    private final AccountService accounts;
 
-    public SlaController(SlaService slaService, IncidentService incidentService) {
+    public SlaController(SlaService slaService, IncidentService incidentService, AccountService accounts) {
         this.slaService = slaService;
         this.incidentService = incidentService;
+        this.accounts = accounts;
     }
 
     @GetMapping("/api/sla/policies")
     public List<SlaPolicyResponse> policies() {
+        accounts.requireCurrentAccount();
         return slaService.allPolicies().stream().map(SlaPolicyResponse::from).toList();
     }
 
@@ -39,7 +43,7 @@ public class SlaController {
 
     @GetMapping("/api/incidents/{id}/sla")
     public SlaSnapshot incidentSla(@PathVariable Long id) {
-        return slaService.evaluate(incidentService.getIncident(id));
+        return slaService.evaluate(incidentService.getIncident(id, accounts.requireCurrentAccount()));
     }
 
     @GetMapping("/api/sla/breaches")

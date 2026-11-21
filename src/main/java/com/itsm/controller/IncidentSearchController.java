@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.itsm.model.Incident;
+import com.itsm.service.AccountService;
 import com.itsm.service.search.IncidentSearchCriteria;
 import com.itsm.service.search.IncidentSearchService;
 
@@ -17,8 +18,11 @@ public class IncidentSearchController {
 
     private final IncidentSearchService searchService;
 
-    public IncidentSearchController(IncidentSearchService searchService) {
+    private final AccountService accounts;
+
+    public IncidentSearchController(IncidentSearchService searchService, AccountService accounts) {
         this.searchService = searchService;
+        this.accounts = accounts;
     }
 
     /**
@@ -29,6 +33,6 @@ public class IncidentSearchController {
     public PagedModel<Incident> search(
             @ModelAttribute IncidentSearchCriteria criteria,
             @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
-        return new PagedModel<>(searchService.search(criteria, pageable));
+        return new PagedModel<>(searchService.search(criteria, pageable, accounts.requireCurrentAccount()));
     }
 }
