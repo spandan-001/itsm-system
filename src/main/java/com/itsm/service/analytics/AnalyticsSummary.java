@@ -22,6 +22,7 @@ public record AnalyticsSummary(
         Double averageFeedbackRating,
         long escalatedOpenIncidents,
         long activeOutages,
+        long predictedBreaches,
         Double slaCompliancePercent,
         Double averageResolutionMinutes,
         Map<IncidentStatus, Long> byStatus,

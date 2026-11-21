@@ -27,6 +27,7 @@ export default function IncidentDetails({ request, account }) {
   const sla = useApiData(request, incident.data ? path + '/sla' : null);
   const audit = useApiData(request, incident.data ? path + '/audit' : null);
   const notes = useApiData(request, incident.data ? path + '/notes' : null);
+  const prediction = useApiData(request, incident.data ? path + '/sla-prediction' : null);
   const fixes = useApiData(request, incident.data && account.role !== 'EMPLOYEE'
     && !feedbackStatuses.has(incident.data.status) ? path + '/suggested-resolutions' : null);
   const [failure, setFailure] = useState('');
@@ -38,6 +39,7 @@ export default function IncidentDetails({ request, account }) {
     sla.reload();
     audit.reload();
     notes.reload();
+    prediction.reload();
   }
 
   async function changeStatus(status) {
@@ -140,6 +142,11 @@ export default function IncidentDetails({ request, account }) {
         {sla.data && <dl className="itsm-facts">
           <div><dt>Response</dt><dd>{label(sla.data.responseState)} · {dateTime(sla.data.responseDueAt)}</dd></div>
           <div><dt>Resolution</dt><dd>{label(sla.data.resolutionState)} · {dateTime(sla.data.resolutionDueAt)}</dd></div>
+          {prediction.data && prediction.data.risk !== 'NOT_APPLICABLE' && <div>
+            <dt>Predicted resolution</dt>
+            <dd>{dateTime(prediction.data.predictedResolutionAt)} · {label(prediction.data.risk)} risk
+              <br /><small>{prediction.data.basis}{prediction.data.workloadFactor !== 1 ? `, workload ×${prediction.data.workloadFactor}` : ''}</small></dd>
+          </div>}
         </dl>}
         {!sla.data && !sla.error && <p role="status">Loading SLA…</p>}
       </section>

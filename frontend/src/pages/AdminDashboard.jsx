@@ -29,6 +29,7 @@ export default function AdminDashboard({ request }) {
   const summary = useApiData(request, '/analytics/summary');
   const audit = useApiData(request, '/audit?size=5');
   const outages = useApiData(request, '/outages');
+  const atRisk = useApiData(request, '/sla/at-risk');
 
   async function assign(id, technicianId) {
     if (!technicianId) return;
@@ -58,6 +59,7 @@ export default function AdminDashboard({ request }) {
         <div className="admin-stat-card"><dt><DashboardIcon name="clock" />Queued</dt><dd>{summary.data.queuedIncidents}</dd></div>
         <div className="admin-stat-card"><dt><DashboardIcon name="clock" />SLA breached</dt><dd>{summary.data.slaBreachedIncidents}</dd></div>
         <div className="admin-stat-card"><dt><DashboardIcon name="laptop" />Critical open (P1)</dt><dd>{summary.data.criticalOpenIncidents}</dd></div>
+        <div className="admin-stat-card"><dt><DashboardIcon name="clock" />Predicted to miss SLA</dt><dd>{summary.data.predictedBreaches}</dd></div>
         <div className="admin-stat-card"><dt><DashboardIcon name="wifi" />Active outages</dt><dd>{summary.data.activeOutages}</dd></div>
         <div className="admin-stat-card"><dt><DashboardIcon name="bell" />Escalated (open)</dt><dd>{summary.data.escalatedOpenIncidents}</dd></div>
         <div className="admin-stat-card"><dt><DashboardIcon name="bell" />Waiting on reporter</dt><dd>{summary.data.awaitingReporterInfo}</dd></div>
@@ -130,6 +132,17 @@ export default function AdminDashboard({ request }) {
           }))}
         />
       </div>
+      {!!atRisk.data?.length && <section className="admin-panel">
+        <div className="admin-panel-heading"><h2>Predicted to miss SLA</h2></div>
+        <div className="admin-table-container itsm-table"><table>
+          <thead><tr><th>Incident</th><th>Predicted resolution</th><th>Due</th><th>Why</th></tr></thead>
+          <tbody>{atRisk.data.map(p => <tr key={p.incidentId}>
+            <td><Link to={`/incidents/${p.incidentId}`}>#{p.incidentId} {p.title}</Link></td>
+            <td>{dateTime(p.predictedResolutionAt)}</td><td>{dateTime(p.resolutionDueAt)}</td>
+            <td>{p.basis}{p.workloadFactor !== 1 ? `, workload ×${p.workloadFactor}` : ''}</td>
+          </tr>)}</tbody>
+        </table></div>
+      </section>}
       <section className="admin-panel">
         <div className="admin-panel-heading"><h2>Service health</h2></div>
         {outages.error && <p className="itsm-panel-message" role="alert">{outages.error.message}</p>}
