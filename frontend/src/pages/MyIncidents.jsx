@@ -1,60 +1,78 @@
-
-import './MyIncidents.css';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 
-function MyIncidents() {
+import { dateTime, label } from '../api';
+import { useApiData } from '../useApiData';
 
-  const incidents = JSON.parse(
-    localStorage.getItem('itsmIncidents') || '[]'
-  );
+export default function MyIncidents({ request, account }) {
+  const [page, setPage] = useState(0);
+  const { data, error, reload } = useApiData(request, `/incidents?page=${page}`);
+  const employee = account.role === 'EMPLOYEE';
 
   return (
-    <div className="my-incidents">
-
-      <Link to="/employee" className="back-link">
-        ← Back to Dashboard
-      </Link>
-
-      <h1>My Incidents</h1>
-      <p>View and track the IT issues you have reported.</p>
-
-      <div className="incidents-table">
-
-        {incidents.length === 0 ? (
-          <p>You haven't reported any incidents yet.</p>
-        ) : (
-
+    <section className="itsm-panel">
+      <div className="itsm-heading">
+        <h1>{employee ? 'My incidents' : 'Assigned incidents'}</h1>
+        {employee && <Link className="itsm-button" to="/report-incident">Report an incident</Link>}
+        <button className="itsm-button secondary" type="button" onClick={reload}>Refresh</button>
+      </div>
+      {error && <p role="alert">{error.message}</p>}
+      {!data && !error && <p role="status">Loading incidents…</p>}
+      {data && (data.content.length ? (
+        <div className="itsm-table">
           <table>
-            <thead>
-              <tr>
-                <th>Incident ID</th>
-                <th>Issue</th>
-                <th>Category</th>
-                <th>Priority</th>
-                <th>Status</th>
-                <th>Date</th>
-              </tr>
-            </thead>
-
+            <thead><tr><th>Incident</th><th>Priority</th><th>Status</th><th>Resolution due</th></tr></thead>
             <tbody>
-              {incidents.map((incident) => (
+              {data.content.map(incident => (
                 <tr key={incident.id}>
-                  <td>{incident.id}</td>
-                  <td>{incident.title}</td>
-                  <td>{incident.category}</td>
+                  <td><Link to={`/incidents/${incident.id}`}>#{incident.id} {incident.title}</Link></td>
                   <td>{incident.priority}</td>
-                  <td>{incident.status}</td>
-                  <td>{incident.date}</td>
+                  <td>{label(incident.status)}</td>
+                  <td>{dateTime(incident.resolutionDueAt)}</td>
                 </tr>
               ))}
             </tbody>
           </table>
-
-        )}
-
-      </div>
-    </div>
+        </div>
+      ) : <p>No incidents on this page.</p>)}
+      {data && (page > 0 || data.page.totalPages > 1) && (
+        <div className="itsm-actions">
+          <button type="button" disabled={page === 0} onClick={() => setPage(page - 1)}>Previous</button>
+          <span>Page {page + 1}</span>
+          <button type="button" disabled={page + 1 >= data.page.totalPages} onClick={() => setPage(page + 1)}>Next</button>
+        </div>
+      )}
+      {!employee && <Availability request={request} accountId={account.accountId} onChange={reload} />}
+    </section>
   );
 }
 
-export default MyIncidents;
+function Availability({ request, accountId, onChange }) {
+  const { data, error, reload } = useApiData(request, '/technicians/me');
+  const [failure, setFailure] = useState('');
+  const [pending, setPending] = useState(false);
+
+  async function toggle() {
+    setPending(true);
+    setFailure('');
+    try {
+      await request(`/technicians/${accountId}/availability`, { method: 'PATCH', body: { available: !data.available } });
+      reload();
+      onChange();
+    } catch (error) {
+      setFailure(error.message);
+    } finally {
+      setPending(false);
+    }
+  }
+
+  return (
+    <section className="itsm-section">
+      <h2>Availability</h2>
+      {(error || failure) && <p role="alert">{failure || error.message}</p>}
+      {data && <button type="button" className="itsm-button secondary" disabled={pending} onClick={toggle}>
+        {data.available ? 'Set unavailable' : 'Set available'}
+      </button>}
+    </section>
+  );
+}

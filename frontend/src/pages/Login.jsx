@@ -1,35 +1,41 @@
-
+import { useState } from 'react';
 import '../App.css';
+import { supabase } from '../api';
 
-function Login() {
+export default function Login({ message, disabled, signedIn }) {
+  const [error, setError] = useState('');
+  const [pending, setPending] = useState(false);
+
+  async function authenticate() {
+    setPending(true);
+    setError('');
+    try {
+      const { error } = signedIn
+        ? await supabase.auth.signOut()
+        : await supabase.auth.signInWithOAuth({
+            provider: 'google',
+            options: { redirectTo: window.location.origin + '/' },
+          });
+      if (error) throw error;
+    } catch (error) {
+      setError(error.message);
+    } finally {
+      setPending(false);
+    }
+  }
+
   return (
-    <div className="login-page">
+    <main className="login-page">
       <div className="login-card">
-
         <h1>I-ITSM</h1>
-
-        <p className="subtitle">
-          Intelligent IT Service Management System
-        </p>
-
-        <h2>Welcome!</h2>
-
-        <p className="description">
-          Your central platform for reporting and managing IT incidents.
-        </p>
-
-        <button className="google-button">
-          <span className="google-icon">G</span>
-          Continue with Google
+        <p className="subtitle">Intelligent IT Service Management System</p>
+        <h2>Welcome</h2>
+        {message && <p role="status">{message}</p>}
+        {error && <p role="alert">{error}</p>}
+        <button className="google-button" type="button" disabled={disabled || pending} onClick={authenticate}>
+          {signedIn ? 'Sign out' : 'Continue with Google'}
         </button>
-
-        <p className="footer-text">
-          Secure access to your IT support portal
-        </p>
-
       </div>
-    </div>
+    </main>
   );
 }
-
-export default Login;

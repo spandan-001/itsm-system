@@ -4,6 +4,10 @@ import java.util.List;
 import java.util.Map;
 
 import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.bind.annotation.*;
 
 import com.itsm.dto.StrategyInfo;
@@ -13,6 +17,9 @@ import com.itsm.exception.ResourceNotFoundException;
 import com.itsm.model.Technician;
 import com.itsm.repository.TechnicianRepository;
 import com.itsm.service.IncidentService;
+import com.itsm.service.AccountService;
+import com.itsm.service.AdminAccess;
+import com.itsm.model.AccountLink.Role;
 import com.itsm.service.routing.RoutingService;
 import com.itsm.strategy.assignment.TechnicianRecommendation;
 import com.itsm.strategy.priority.PriorityCalculator;
@@ -25,13 +32,18 @@ public class RoutingController {
     private final PriorityCalculator priorityCalculator;
     private final IncidentService incidentService;
     private final TechnicianRepository technicianRepository;
+    private final AccountService accounts;
+    private final AdminAccess admins;
 
     public RoutingController(RoutingService routingService, PriorityCalculator priorityCalculator,
-                             IncidentService incidentService, TechnicianRepository technicianRepository) {
+                             IncidentService incidentService, TechnicianRepository technicianRepository,
+                             AccountService accounts, AdminAccess admins) {
         this.routingService = routingService;
         this.priorityCalculator = priorityCalculator;
         this.incidentService = incidentService;
         this.technicianRepository = technicianRepository;
+        this.accounts = accounts;
+        this.admins = admins;
     }
 
     /** Smart technician recommendation for one incident, best first, with reasons. */
@@ -55,9 +67,25 @@ public class RoutingController {
                 .toList();
     }
 
+    @GetMapping("/api/technicians/me")
+    public TechnicianView currentTechnician() {
+        var account = accounts.requireCurrentAccount();
+        if (account.role() != Role.TECHNICIAN) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+        }
+        return view(technicianRepository.findById(account.id())
+                .orElseThrow(() -> new ResourceNotFoundException("Technician", account.id())));
+    }
+
     @PatchMapping("/api/technicians/{id}/availability")
-    public TechnicianView setAvailability(@PathVariable Long id,
+    public TechnicianView setAvailability(@AuthenticationPrincipal Jwt jwt, @PathVariable Long id,
                                           @Valid @RequestBody TechnicianUpdateRequests.Availability request) {
+        if (!admins.allows(jwt.getSubject())) {
+            var account = accounts.requireCurrentAccount();
+            if (account.role() != Role.TECHNICIAN || !id.equals(account.id())) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+            }
+        }
         Technician technician = updateTechnician(id, t -> t.setAvailable(request.available()));
         if (request.available()) {
             incidentService.routeQueuedIncidents(); // a returning technician can pick up queued work

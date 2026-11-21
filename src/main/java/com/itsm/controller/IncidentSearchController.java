@@ -25,6 +25,13 @@ public class IncidentSearchController {
         this.accounts = accounts;
     }
 
+    @GetMapping("/api/admin/incidents")
+    public PagedModel<Incident> adminSearch(
+            @ModelAttribute IncidentSearchCriteria criteria,
+            @PageableDefault(size = 20, sort = "id", direction = Sort.Direction.DESC) Pageable pageable) {
+        return new PagedModel<>(searchService.search(criteria, pageable));
+    }
+
     /**
      * Example: {@code /api/incidents/search?status=ASSIGNED&status=IN_PROGRESS&priority=P1
      * &category=NETWORK&keyword=wifi&createdFrom=2026-11-01&slaBreached=true&sort=priority}

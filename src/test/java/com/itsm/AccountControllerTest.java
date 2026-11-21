@@ -248,6 +248,35 @@ class AccountControllerTest {
                 .andExpect(status().isForbidden());
         mvc.perform(get("/api/audit").header(HttpHeaders.AUTHORIZATION, "Bearer admin"))
                 .andExpect(status().isOk());
+        mvc.perform(get("/api/admin/incidents").header(HttpHeaders.AUTHORIZATION, "Bearer verified"))
+                .andExpect(status().isForbidden());
+        mvc.perform(get("/api/admin/incidents").header(HttpHeaders.AUTHORIZATION, "Bearer admin"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content").isArray());
+        mvc.perform(get("/api/me").header(HttpHeaders.AUTHORIZATION, "Bearer admin"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.admin").value(true));
+    }
+
+    @Test
+    void techniciansCanUpdateOnlyTheirOwnAvailability() throws Exception {
+        var technician = technicians.save(new Technician("Technician", "tech@example.test", "NETWORK", true));
+        var other = technicians.save(new Technician("Other Technician", "other-tech@example.test", "HARDWARE", true));
+        accountLinks.saveAndFlush(new AccountLink(UUID.fromString(TECHNICIAN_ID), technician));
+        stubToken("technician", TECHNICIAN_ID);
+
+        mvc.perform(get("/api/technicians/me").header(HttpHeaders.AUTHORIZATION, "Bearer technician"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(technician.getId()));
+        mvc.perform(patch("/api/technicians/{id}/availability", other.getId())
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer technician")
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"available\": false}"))
+                .andExpect(status().isForbidden());
+        mvc.perform(patch("/api/technicians/{id}/availability", technician.getId())
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer technician")
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"available\": false}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.available").value(false));
     }
 
     private MockHttpServletRequestBuilder changeStatus(Long id, String status, String token) {

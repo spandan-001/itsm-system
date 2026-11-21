@@ -7,7 +7,8 @@ Base path `/api/incidents`. Requests with a body use `Content-Type: application/
 After Google sign-in through Supabase, send the Supabase session's access token
 as `Authorization: Bearer <access_token>` to `GET /api/me`. A linked account
 gets `200` with `userId` (the Supabase user UUID), `email`, `role`
-(`EMPLOYEE` or `TECHNICIAN`), and `accountId` (the ITSM record ID).
+(`EMPLOYEE` or `TECHNICIAN`), `accountId` (the ITSM record ID), and `admin`.
+An administrator can have a null role and account ID if no employee or technician record is linked.
 A missing, expired, or invalid token returns `401`. A valid token without
 an ITSM account link returns `403`.
 
@@ -64,3 +65,9 @@ Configure administrative access with `ITSM_ADMIN_USER_IDS`, a comma-separated
 list of approved Supabase user UUIDs. The default list is empty. Administration
 covers manual routing, global audit, analytics, SLA policy updates, strategy
 selection, technician management, and duplicate-management endpoints.
+
+
+The admin dashboard uses `GET /api/admin/incidents` with the same pagination
+and filters as incident search. A linked technician can read their profile at
+`GET /api/technicians/me` and update their own availability. An administrator
+can update availability for any technician.

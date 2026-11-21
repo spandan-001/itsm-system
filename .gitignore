@@ -22,3 +22,7 @@ build/
 
 # Maven wrapper downloaded runtime
 .mvn/wrapper/maven-wrapper.jar
+
+# Frontend output and dependencies
+node_modules/
+dist/

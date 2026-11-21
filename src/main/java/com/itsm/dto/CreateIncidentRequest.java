@@ -1,5 +1,5 @@
 package com.itsm.dto;
- 
+
 
 
 import com.itsm.enums.Impact;
@@ -72,9 +72,9 @@ public class CreateIncidentRequest {
         this.serviceIds = serviceIds;
     }
 
-    
 
 
 
-    
+
+
 }

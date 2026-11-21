@@ -1,5 +1,6 @@
 package com.itsm.service;
 
+import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.http.HttpStatus;
@@ -24,10 +25,15 @@ public class AccountService {
 
     @Transactional(readOnly = true)
     public LinkedAccount requireLinkedAccount(UUID userId) {
-        var link = accountLinks.findById(userId)
+        return findLinkedAccount(userId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.FORBIDDEN,
                         "This Supabase user is not linked to an ITSM account"));
-        return new LinkedAccount(link.role(), link.accountId(), link.email());
+    }
+
+    @Transactional(readOnly = true)
+    public Optional<LinkedAccount> findLinkedAccount(UUID userId) {
+        return accountLinks.findById(userId)
+                .map(link -> new LinkedAccount(link.role(), link.accountId(), link.email()));
     }
 
     @Transactional(readOnly = true)

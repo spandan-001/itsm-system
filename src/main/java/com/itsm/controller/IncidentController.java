@@ -79,4 +79,3 @@ public class IncidentController {
 
     public record UpdateStatusRequest(@NotNull IncidentStatus status) {}
 }
-
