@@ -10,8 +10,8 @@ A course project for CS F213 (Object-Oriented Programming). The system tracks IT
 | --- | --- |
 | Backend | Java 21, Spring Boot 4.1 (Spring MVC, Data JPA, Bean Validation, Security, Actuator) |
 | Frontend | React with Vite, in [`frontend/`](frontend/) |
-| Database | H2 in memory for local runs and tests; Supabase PostgreSQL for shared data |
-| Sign-in | Google through Supabase Auth; Spring checks the Supabase JWT |
+| Database | Supabase PostgreSQL for the team demo. H2 for isolated development and tests. |
+| Sign-in | Google or email/password through Supabase Auth. Spring checks the Supabase JWT |
 
 ## Features
 
@@ -75,7 +75,7 @@ docs/           Design notes and API reference
 
 ## Run the shared demo on your laptop
 
-Clone the integration branch, then follow the backend and frontend steps below in two separate terminals.
+The shared demo uses the existing Supabase database, even when the website runs on your laptop. Install Java 21 and Node 24 or later. Clone the integration branch once.
 
 ```bash
 git clone --branch codex/itsm-integration https://github.com/spandan-001/itsm-system.git
@@ -84,51 +84,25 @@ cd itsm-system
 
 Ask the project owner privately for the shared database connection settings, the demo admin UUID, the frontend publishable key, and the demo login for your role. Use the Supabase backend profile for this walkthrough. If the JDBC URL references a CA certificate, point it to the certificate on your laptop.
 
-If your backend settings are in a private root-level `.env.supabase` file, Spring can read its unquoted `KEY=value` entries directly. Include `ITSM_ADMIN_USER_IDS` for admin sign-in. The optional server-side `SUPABASE_SECRET_KEY` enables the admin **Create user** form.
+**Terminal 1 — backend.** With your backend settings in a private root-level `.env.supabase` file, Spring can read its unquoted `KEY=value` entries directly. Include `ITSM_ADMIN_USER_IDS` for admin sign-in. The optional server-side `SUPABASE_SECRET_KEY` enables the admin **Create user** form.
 
 ```bash
 ./mvnw spring-boot:run -Dspring-boot.run.profiles=supabase '-Dspring-boot.run.arguments=--spring.config.additional-location=file:./.env.supabase[.properties]'
 ```
 
-Once both servers are running, open http://localhost:3000 and follow the [demo recording walkthrough](docs/demo-walkthrough.md). Each laptop runs its own website and shares incident data through Supabase.
-
-## Running it
-
-You need Java 21. The frontend also needs Node 24 or later.
-
-**Backend.** Run these from the repository root:
+**Terminal 2 — frontend.** From the repository root, run the following once:
 
 ```bash
-./mvnw spring-boot:run
-```
-
-This starts on port 8080 with an in-memory H2 database and demo data: employees, technicians, services and eight incidents, including a Wi-Fi outage. To turn the demo data off, set `itsm.seed.demo-data=false`.
-
-To use the shared Supabase database instead, set `DB_URL`, `DB_USERNAME` and `DB_PASSWORD`, then run:
-
-```bash
-./mvnw spring-boot:run -Dspring-boot.run.profiles=supabase
-```
-
-Hibernate runs in validation mode, so the schema must be applied first (see below).
-
-**Frontend.** Run these from `frontend/`:
-
-```bash
+cd frontend
 cp .env.example .env.local
-```
-
-Set `VITE_SUPABASE_PUBLISHABLE_KEY` in `.env.local`, then:
-
-```bash
 npm ci
 ```
 
-```bash
-npm run dev
-```
+Set `VITE_SUPABASE_PUBLISHABLE_KEY` in `frontend/.env.local`. From the frontend directory, run `npm run dev` and open http://localhost:3000. Sign in with your assigned demo account. Both terminals stay open during the demo. See the [recording walkthrough](docs/demo-walkthrough.md).
 
-Open http://localhost:3000. Vite forwards `/api` to Spring. [`frontend/README.md`](frontend/README.md) covers the sign-in setup: redirect URLs, linking Supabase accounts to employees or technicians, and `ITSM_ADMIN_USER_IDS` for administrators.
+## Database setup for a new project
+
+Teammates using the existing shared project can skip this section.
 
 **Database.** For a fresh Supabase database, apply these in order:
 

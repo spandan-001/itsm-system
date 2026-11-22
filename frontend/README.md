@@ -1,10 +1,10 @@
 # ITSM frontend
 
-The React frontend uses Google sign-in through Supabase Auth and sends the Supabase access token to Spring. Incident records, assignments, SLA, audit, and notifications come from Spring's API.
+The React frontend uses Google and email/password sign-in through Supabase Auth and sends the Supabase access token to Spring. Incident records, assignments, SLA, audit, and notifications come from Spring's API.
 
 ## Run locally
 
-1. Start Spring from the repository root with `./mvnw spring-boot:run`. The default database is H2. For shared development data, export the database settings and run `./mvnw spring-boot:run -Dspring-boot.run.profiles=supabase`.
+1. Start the backend using the [shared Supabase demo instructions](../README.md#run-the-shared-demo-on-your-laptop).
 2. In this directory, copy `.env.example` to `.env.local` and set `VITE_SUPABASE_PUBLISHABLE_KEY` to the project's publishable key from the Supabase dashboard. Use the key starting with `sb_publishable_`. The frontend configuration is public.
 3. Run `npm ci` and `npm run dev`, then visit `http://localhost:3000`. The Vite proxy forwards `/api` to Spring on port 8080.
 4. Add `http://localhost:3000/` to the Supabase Auth redirect allowlist. Link approved Supabase accounts to ITSM employees or technicians before signing in. For an administrator, set the Spring server's `ITSM_ADMIN_USER_IDS` to the approved Supabase UUIDs, separated by commas.
