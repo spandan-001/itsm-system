@@ -4,11 +4,11 @@ import './Charts.css';
  * Single-series horizontal bar chart. Every bar is labelled with its value, so
  * the list doubles as the table view; hover or focus a row for its share.
  */
-export default function BarChart({ title, data, unit = 'incidents' }) {
+export default function BarChart({ title, data, variant, unit = 'incidents' }) {
   const max = Math.max(1, ...data.map(d => d.value));
   const total = data.reduce((sum, d) => sum + d.value, 0);
   return (
-    <figure className="itsm-chart">
+    <figure className="itsm-chart" data-chart={variant}>
       <figcaption>{title}</figcaption>
       {total === 0 ? <p className="itsm-chart-empty">No data yet.</p> : <ul className="itsm-bars">
         {data.map(d => <li key={d.label} tabIndex={0} aria-label={`${d.label}: ${d.value} ${unit}`}>

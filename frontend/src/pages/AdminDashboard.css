@@ -550,3 +550,19 @@
     max-width: 100%;
   }
 }
+
+.incident-filter-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 9rem), 1fr));
+  gap: .8rem 1rem;
+  padding: 0 clamp(1rem, 2vw, 1.5rem) 1rem;
+}
+.incident-filter-grid label { display: grid; gap: .35rem; font-size: .85rem; font-weight: 600; color: #45564a; }
+.incident-filter-grid :is(input, select) {
+  box-sizing: border-box; width: 100%; min-width: 0; height: 2.65rem;
+  border: 1px solid #c7d2c7; border-radius: .6rem; padding: 0 .7rem;
+  background: #fafcf9; color: #203026; font: inherit; font-weight: 400;
+}
+.incident-filter-grid :focus-visible { outline: 2px solid #3c6949; outline-offset: 1px; }
+.incident-more-filters { border-bottom: 1px solid #dfe6dd; }
+.incident-more-filters summary { cursor: pointer; padding: .3rem 1.5rem 1rem; font-size: .9rem; font-weight: 600; color: #32573d; }

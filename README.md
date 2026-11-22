@@ -73,6 +73,25 @@ database/       Supabase schema, migrations, seed data, ER diagram
 docs/           Design notes and API reference
 ```
 
+## Run the shared demo on your laptop
+
+Clone the integration branch, then follow the backend and frontend steps below in two separate terminals.
+
+```bash
+git clone --branch codex/itsm-integration https://github.com/spandan-001/itsm-system.git
+cd itsm-system
+```
+
+Ask the project owner privately for the shared database connection settings, the demo admin UUID, the frontend publishable key, and the demo login for your role. Use the Supabase backend profile for this walkthrough. If the JDBC URL references a CA certificate, point it to the certificate on your laptop.
+
+If your backend settings are in a private root-level `.env.supabase` file, Spring can read its unquoted `KEY=value` entries directly. Include `ITSM_ADMIN_USER_IDS` for admin sign-in. The optional server-side `SUPABASE_SECRET_KEY` enables the admin **Create user** form.
+
+```bash
+./mvnw spring-boot:run -Dspring-boot.run.profiles=supabase '-Dspring-boot.run.arguments=--spring.config.additional-location=file:./.env.supabase[.properties]'
+```
+
+Once both servers are running, open http://localhost:3000 and follow the [demo recording walkthrough](docs/demo-walkthrough.md). Each laptop runs its own website and shares incident data through Supabase.
+
 ## Running it
 
 You need Java 21. The frontend also needs Node 24 or later.
@@ -116,6 +135,8 @@ Open http://localhost:3000. Vite forwards `/api` to Spring. [`frontend/README.md
 1. `database/schema.sql`
 2. `database/backend-additions.sql`
 3. `database/account-links.sql`
+4. `database/supabase-auth-passwords.sql`
+5. `database/admin-provisioning.sql`
 
 `database/er-diagram.md` describes every table.
 
@@ -161,3 +182,20 @@ Strategies and classifier settings can also be changed at runtime through the ad
 - [API reference](docs/incident-api.md)
 - [Audit, notifications and SLA](docs/audit-notifications-sla.md)
 - [ER diagram](database/er-diagram.md)
+
+## Hosting the demo
+
+Build the root Dockerfile with the public build arguments `VITE_SUPABASE_URL` and
+`VITE_SUPABASE_PUBLISHABLE_KEY`. The image serves React and the Spring API on
+the same origin. Set the host's `PORT` or use the default 8080.
+
+In the host's private runtime environment, configure `DB_URL`, `DB_USERNAME`,
+`DB_PASSWORD`, `SUPABASE_AUTH_ISSUER`, `ITSM_ADMIN_USER_IDS`, and
+`SUPABASE_SECRET_KEY`. Use a PostgreSQL JDBC URL with TLS and ensure any CA
+file referenced in the URL exists on the host. The issuer is the Supabase
+project URL followed by `/auth/v1`. The secret key enables the admin
+dashboard's **Create user** form.
+
+For a fresh database, also apply `database/supabase-auth-passwords.sql` and
+`database/admin-provisioning.sql` after the three schema scripts above. Set
+the final HTTPS origin in the Supabase Auth site URL and redirect allowlist.

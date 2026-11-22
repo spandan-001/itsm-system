@@ -1,3 +1,4 @@
+import CreateUser from './CreateUser';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { dateTime, label } from '../api';
@@ -71,35 +72,27 @@ export default function AdminDashboard({ request }) {
         <div className="itsm-live">
           <label><input type="checkbox" checked={live} onChange={e => setLive(e.target.checked)} /> Live updates (every 15 s)</label>
           <small>Updated {updatedAt.toLocaleTimeString()}</small>
+      <CreateUser request={request} categories={categories} />
           <button type="button" className="itsm-button secondary" onClick={reloadAll}>Refresh</button>
         </div>
       </header>
       {(failure || error) && <p role="alert">{failure || error.message}</p>}
       {summary.data && <dl className="admin-stats itsm-facts">
-        <div className="admin-stat-card"><dt><DashboardIcon name="laptop" />Total incidents</dt><dd>{summary.data.totalIncidents}</dd></div>
-        <div className="admin-stat-card"><dt><DashboardIcon name="laptop" />Open</dt><dd>{summary.data.openIncidents}</dd></div>
-        <div className="admin-stat-card"><dt><DashboardIcon name="clock" />Queued</dt><dd>{summary.data.queuedIncidents}</dd></div>
-        <div className="admin-stat-card"><dt><DashboardIcon name="clock" />SLA breached</dt><dd>{summary.data.slaBreachedIncidents}</dd></div>
-        <div className="admin-stat-card"><dt><DashboardIcon name="laptop" />Critical open (P1)</dt><dd>{summary.data.criticalOpenIncidents}</dd></div>
-        <div className="admin-stat-card"><dt><DashboardIcon name="clock" />Predicted to miss SLA</dt><dd>{summary.data.predictedBreaches}</dd></div>
-        <div className="admin-stat-card"><dt><DashboardIcon name="wifi" />Active outages</dt><dd>{summary.data.activeOutages}</dd></div>
-        <div className="admin-stat-card"><dt><DashboardIcon name="bell" />Escalated (open)</dt><dd>{summary.data.escalatedOpenIncidents}</dd></div>
-        <div className="admin-stat-card"><dt><DashboardIcon name="bell" />Waiting on reporter</dt><dd>{summary.data.awaitingReporterInfo}</dd></div>
-        <div className="admin-stat-card"><dt><DashboardIcon name="check" />SLA compliance</dt>
-          <dd>{summary.data.slaCompliancePercent == null ? '—' : `${summary.data.slaCompliancePercent}%`}</dd></div>
-        <div className="admin-stat-card"><dt><DashboardIcon name="check" />Average rating</dt>
-          <dd>{summary.data.averageFeedbackRating == null ? '—' : `${summary.data.averageFeedbackRating}/5`}</dd></div>
+        <div className="admin-stat-card"><dt><DashboardIcon name="laptop" />Open incidents</dt><dd>{summary.data.openIncidents}</dd></div>
+        <div className="admin-stat-card"><dt><DashboardIcon name="clock" />Queued incidents</dt><dd>{summary.data.queuedIncidents}</dd></div>
+        <div className="admin-stat-card"><dt><DashboardIcon name="bell" />Critical open (P1)</dt><dd>{summary.data.criticalOpenIncidents}</dd></div>
+        <div className="admin-stat-card"><dt><DashboardIcon name="clock" />SLA breaches</dt><dd>{summary.data.slaBreachedIncidents}</dd></div>
       </dl>}
       {summary.data && <section className="admin-panel">
         <div className="admin-panel-heading"><h2>Analytics</h2></div>
         <div className="itsm-chart-grid">
           <ColumnChart title="Incidents reported, last 7 days" data={Object.entries(summary.data.createdPerDay)
             .map(([day, value]) => ({ label: new Date(`${day}T00:00`).toLocaleDateString(undefined, { weekday: 'short' }), value }))} />
-          <BarChart title="By status" data={statuses.map(value => ({ label: label(value), value: summary.data.byStatus[value] ?? 0 }))} />
-          <BarChart title="By priority" data={priorities.map(value => ({ label: value, value: summary.data.byPriority[value] ?? 0 }))} />
-          <BarChart title="By category" data={categories.map(value => ({ label: label(value), value: summary.data.byCategory[value] ?? 0 }))
+          <BarChart variant="status" title="Incidents by status" data={statuses.map(value => ({ label: label(value), value: summary.data.byStatus[value] ?? 0 }))} />
+          <BarChart variant="priority" title="Incidents by priority" data={priorities.map(value => ({ label: value, value: summary.data.byPriority[value] ?? 0 }))} />
+          <BarChart variant="category" title="Incidents by category" data={categories.map(value => ({ label: label(value), value: summary.data.byCategory[value] ?? 0 }))
             .sort((a, b) => b.value - a.value)} />
-          <BarChart title="By affected service" data={Object.entries(summary.data.byService ?? {})
+          <BarChart variant="service" title="Incidents by affected service" data={Object.entries(summary.data.byService ?? {})
             .map(([service, value]) => ({ label: service, value }))} />
         </div>
       </section>}
@@ -109,11 +102,16 @@ export default function AdminDashboard({ request }) {
             <button type="button" className="itsm-button secondary"
               onClick={() => { setFilters(emptyFilters); setKeyword(''); setPage(0); }}>Clear filters</button>
           </div>
-          <div className="itsm-filters">
-            <label>Search <input type="search" value={keyword} onChange={e => { setKeyword(e.target.value); setPage(0); }} /></label>
-            <label>Incident ID <input type="number" min="1" value={filters.incidentId} onChange={e => filter('incidentId', e.target.value)} /></label>
+          <div className="incident-filter-grid">
+            <label>Search <input type="search" placeholder="Search incidents" value={keyword} onChange={e => { setKeyword(e.target.value); setPage(0); }} /></label>
+
             <Select name="status" text="Status" value={filters.status} options={statuses} onChange={filter} />
             <Select name="priority" text="Priority" value={filters.priority} options={priorities} onChange={filter} />
+          </div>
+          <details className="incident-more-filters">
+            <summary>More filters</summary>
+            <div className="incident-filter-grid">
+            <label>Incident ID <input type="number" min="1" value={filters.incidentId} onChange={e => filter('incidentId', e.target.value)} /></label>
             <Select name="category" text="Category" value={filters.category} options={categories} onChange={filter} />
             <label>Technician <select value={filters.technicianId} onChange={e => filter('technicianId', e.target.value)}>
               <option value="">Any</option>
@@ -127,6 +125,7 @@ export default function AdminDashboard({ request }) {
               <option value="">Any</option><option value="true">Yes</option><option value="false">No</option>
             </select></label>
           </div>
+          </details>
           {!incidents.data && !incidents.error && <p className="itsm-panel-message" role="status">Loading incidents…</p>}
           {incidents.data?.content.length === 0 && <p className="itsm-panel-message">No matching incidents.</p>}
           {!!incidents.data?.content.length && <div className="admin-table-container itsm-table"><table>

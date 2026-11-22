@@ -55,3 +55,20 @@
 .google-button:focus-visible { outline: 2px solid var(--olive-action); outline-offset: 3px; }
 .google-button:disabled { cursor: default; opacity: .65; }
 .google-icon { color: #3571ce; font-weight: 700; }
+
+.login-form { display: grid; gap: 1rem; text-align: left; }
+.login-form label { display: grid; gap: .35rem; font-weight: 600; }
+.login-form input {
+  width: 100%;
+  min-height: 44px;
+  padding: .6rem .75rem;
+  border: 1px solid var(--olive-line);
+  border-radius: 10px;
+  background: var(--olive-paper);
+  color: var(--olive-ink);
+  font: inherit;
+}
+.login-form input:focus-visible { outline: 2px solid var(--olive-action); outline-offset: 2px; }
+.login-submit { background: var(--olive-action); color: white; }
+.login-submit:hover:enabled { background: var(--olive-action-hover); }
+.login-divider { margin: .85rem 0; color: var(--olive-muted); }
