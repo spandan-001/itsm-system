@@ -51,6 +51,24 @@ Strategies can be switched live, which is handy in the demo: `PUT /api/strategie
 1. **Duplicate detection** (`service/duplicate`): cosine similarity of term frequencies (stop words removed, plurals stemmed). Score = 0.6 × title + 0.4 × description, +0.15 if the same IT service is affected. Compared with open incidents of the same category from the last 7 days. ≥ 0.55 links as duplicate. Reporters of duplicates are notified when the original changes.
 2. **Smart routing** (`SmartAssignmentStrategy`): 50 points for a skill match, 30 × spare capacity (max 5 open incidents), 20 × experience (similar incidents resolved before). P1 incidents wait for a skilled technician; others fall back to whoever is free.
 
+3. **Automatic categorisation** (`service/classification`): a multinomial Naive Bayes classifier (written from scratch, Laplace smoothing, softmax confidence) suggests a category from the report text. It trains on 360 labelled examples (`src/main/resources/classifier/training-data.tsv`) plus every resolved incident, and retrains each time an incident closes, so it learns from the organisation's own history. **5-fold cross-validated accuracy: 82%** on unseen reports, against 11% for guessing among 9 categories. The report form shows the suggestion live; on creation, a suggestion at least 85% confident replaces a wrong category before duplicate detection and routing, and the audit trail records the correction. `IncidentClassifier` is an interface, so another model (e.g. an LLM) can replace it.
+
+| Method and path | Who | Purpose |
+| --- | --- | --- |
+| `POST /api/incidents/classify` | any signed-in user | `{"title": "...", "description": "..."}` → category, confidence, runners-up |
+| `GET /api/classifier` | admin | Training size, vocabulary, cross-validated accuracy, settings |
+| `PUT /api/classifier/settings` | admin | `{"autoCorrect": true, "threshold": 0.85}` |
+| `POST /api/classifier/retrain` | admin | Retrain now |
+
+4. **Suggested resolution** (`service/knowledge`): technicians see the fixes recorded for the most similar past incidents. Score = 0.6 × title + 0.4 × description similarity (the duplicate-detection cosine), +0.10 same category, +0.05 same service, +0.05 if the reporter confirmed the fix, +0.03 per rating star above 3. One click copies a fix into the resolution summary. `GET /api/incidents/{id}/suggested-resolutions`.
+5. **Automatic escalation** (`service/escalation`): a P1/P2 incident nobody has acknowledged moves up Technician → Team Lead → System Administrator → IT Manager at 1×, 1.5× and 2× its response target. Each step is audited and notifies that level's contact (configurable; simulated by default) and the technician.
+6. **Incident correlation / outage detection** (`service/outage`): three or more open reports (duplicates included) against one IT service within 30 minutes open a `ServiceOutage`. The incidents are linked, the system administrator and IT manager are alerted, reporters are told it is a known outage, later reports join it, and it resolves itself when its last incident is resolved. `GET /api/outages`.
+7. **Predictive SLA risk** (`SlaPredictionService`): each open incident gets a predicted resolution time = median of similar past resolutions (same category and priority → same priority → same category, at least 3 examples; else half the target), × (1 + 0.25 per other open incident of the technician), or × 1.5 while unassigned. HIGH risk when the prediction is after the deadline. `GET /api/incidents/{id}/sla-prediction`, `GET /api/sla/at-risk`.
+8. **Number of affected users** feeds priority: the weighted score is ×1 / ×1.5 / ×2 for <10 / 10-99 / 100+ people; the ITIL matrix moves up one level at 10 and another at 100 (`PriorityFactors`).
+9. **SLA early warning**: an "SLA at risk" notice once 75% of a deadline's window has passed.
+
+The admin overview refreshes itself every 15 seconds (polling while the tab is visible, not server push) and shows analytics charts: incidents per day, and by status, priority, category and service.
+
 ## Lifecycle
 
 `NEW → CLASSIFIED → (QUEUED →) ASSIGNED → ACKNOWLEDGED → IN_PROGRESS → RESOLVED → VERIFIED → CLOSED`
@@ -75,6 +93,23 @@ Strategies can be switched live, which is handy in the demo: `PUT /api/strategie
 | `PUT /api/strategies/priority/{name}` | `weighted` or `matrix` |
 | `PUT /api/strategies/assignment/{name}` | `skill`, `load` or `smart` |
 
+### Investigation, resolution and feedback
+
+| Method and path | Who | Purpose |
+| --- | --- | --- |
+| `GET /api/incidents/{id}/notes` | anyone who can see the incident | The thread, oldest first. Employees don't see `INVESTIGATION` notes |
+| `POST /api/incidents/{id}/notes` | see below | `{"type": "INFO_REQUEST", "body": "Which floor are you on?"}` |
+| `PATCH /api/incidents/{id}/status` | role rules below | `{"status": "RESOLVED", "comment": "Rebooted AP-3"}`. `comment` is **required** for `RESOLVED` (the resolution summary), is the reason when reopening, and otherwise becomes a note |
+| `POST /api/incidents/{id}/feedback` | the reporter | `{"rating": 4, "comment": "Quick fix"}`, once, after the incident is resolved |
+
+Note types: employees post `ADDITIONAL_INFO` and `INFO_RESPONSE`; technicians and admins post `INVESTIGATION` (internal) and `INFO_REQUEST`. `RESOLUTION`, `REOPEN_REASON` and `STATUS_COMMENT` are written by the system. An `INFO_REQUEST` sets `awaitingReporterInfo` on the incident until the reporter replies.
+
+Status rules by role: employees `VERIFIED`, `CLOSED`, and reopen (`RESOLVED → IN_PROGRESS`); technicians `ACKNOWLEDGED`, `IN_PROGRESS`, `RESOLVED`; admins any move the state machine allows. Admins without a linked account get role `ADMIN` from `/api/me` and can open every incident.
+
+New incident fields: `awaitingReporterInfo`, `resolutionSummary`, `resolvedBy`, `closedAt`, `feedbackRating`, `feedbackComment`, `feedbackAt`, `responseWarned`, `resolutionWarned`.
+New search filters: `incidentId`, `awaitingInfo`. New analytics: `byService`, `criticalOpenIncidents`, `resolvedIncidents`, `awaitingReporterInfo`, `averageFeedbackRating`.
+The SLA monitor also sends an "SLA at risk" warning once 75% of a deadline's window has passed (`POST /api/sla/check` runs it now). Manually assigning a technician who already has 5 open incidents returns 409 (`TechnicianWorkloadExceededException`).
+
 Audit, notification and SLA endpoints are in [audit-notifications-sla.md](audit-notifications-sla.md).
 
 Errors use RFC 9457 problem JSON: `400` validation (with an `errors` map), `404` not found, `409` business-rule conflicts (an invalid transition includes `from`, `to` and `allowedTransitions`).
@@ -90,16 +125,32 @@ itsm.duplicates.window-days=7
 itsm.seed.demo-data=true
 itsm.sla.check-interval-ms=60000
 itsm.routing.queue-interval-ms=60000
+itsm.classifier.auto-correct=true
+itsm.classifier.auto-correct-threshold=0.85
+itsm.escalation.priorities=P1,P2
+itsm.escalation.team-lead=Network Team Lead <team.lead@example.test>
+itsm.escalation.system-administrator=System Administrator <sysadmin@example.test>
+itsm.escalation.it-manager=IT Manager <it.manager@example.test>
+itsm.outage.threshold=3
+itsm.outage.window-minutes=30
 ```
 
 ## Demo data
 
-On an empty database, `DemoDataSeeder` creates 5 services, 3 employees and 4 technicians (Kavya, the authentication specialist, is unavailable), plus 6 incidents through the real workflow: one in progress, one detected duplicate, one resolved, one closed, one queued, one assigned.
+On an empty database, `DemoDataSeeder` creates 5 services, 3 employees and 4 technicians (Kavya, the authentication specialist, is unavailable), plus 8 incidents through the real workflow:
 
-Demo idea: show the queued email incident, then `PATCH /api/technicians/4/availability {"available": true}`; it is routed to Kavya immediately and the audit trail shows it.
+- a closed Wi-Fi incident with a 5-star fix (its fix is suggested for the open Wi-Fi incident);
+- an open Wi-Fi incident, a duplicate of it, and a third Wi-Fi report: together they open a suspected **Campus Wi-Fi outage**;
+- a resolved portal incident, a closed printer incident, a queued email incident (nobody free), and an assigned database incident.
+
+Demo ideas:
+- Show the queued email incident, then `PATCH /api/technicians/4/availability {"available": true}`; it is routed to Kavya immediately and the audit trail shows it.
+- Open the Wi-Fi incident as a technician: the suggested fix, the outage banner and the predicted resolution time are all there.
+- `POST /api/sla/check` after the P1's response target passes shows escalation and breach notifications.
 
 ## For the database and sign-in work
 
 - `database/backend-additions.sql` adds the new columns and tables to the Supabase schema. It must run before `ddl-auto=validate` will pass.
 - Tests use the `test` profile (`src/test/resources/application-test.properties`), which forces an in-memory H2 database, so `./mvnw test` never touches Supabase.
-- Once Google sign-in works, change `CurrentActorProvider.currentActor()` to return the signed-in user's email; every audit entry then records who did it.
+- Audit entries record the signed-in user's linked ITSM email (`CurrentActorProvider`).
+- Run sections 8–13 of `database/backend-additions.sql` on Supabase for notes, feedback, classification, escalation, outages and affected users.

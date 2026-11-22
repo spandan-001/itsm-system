@@ -10,8 +10,14 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
+import com.itsm.enums.IncidentStatus;
 import com.itsm.event.DuplicateLinkEvent;
+import com.itsm.event.FeedbackReceivedEvent;
+import com.itsm.event.IncidentNoteAddedEvent;
+import com.itsm.event.SlaWarningEvent;
 import com.itsm.event.IncidentAssignedEvent;
+import com.itsm.event.IncidentEscalatedEvent;
+import com.itsm.event.OutageCorrelatedEvent;
 import com.itsm.event.IncidentCreatedEvent;
 import com.itsm.event.IncidentEvent;
 import com.itsm.event.IncidentStatusChangedEvent;
@@ -32,11 +38,14 @@ public class NotificationEventListener {
 
     private final NotificationService notificationService;
     private final IncidentRepository incidentRepository;
+    private final com.itsm.service.escalation.EscalationService escalationService;
 
     public NotificationEventListener(NotificationService notificationService,
-                                     IncidentRepository incidentRepository) {
+                                     IncidentRepository incidentRepository,
+                                     com.itsm.service.escalation.EscalationService escalationService) {
         this.notificationService = notificationService;
         this.incidentRepository = incidentRepository;
+        this.escalationService = escalationService;
     }
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT, fallbackExecution = true)
@@ -66,7 +75,16 @@ public class NotificationEventListener {
             case IncidentStatusChangedEvent changed -> {
                 String text = "\"" + incident.getTitle() + "\" moved from " + changed.getFromStatus()
                         + " to " + changed.getToStatus() + ".";
+                if (changed.getToStatus() == IncidentStatus.RESOLVED) {
+                    text += " Resolution: " + incident.getResolutionSummary()
+                            + " Please verify the fix, or reopen the incident if the problem continues.";
+                }
                 messages.add(new Message(reporter, ref + " is now " + changed.getToStatus(), text));
+                if (changed.getFromStatus() == IncidentStatus.RESOLVED
+                        && changed.getToStatus() == IncidentStatus.IN_PROGRESS && technician != null) {
+                    messages.add(new Message(technician, ref + " reopened",
+                            "The reporter says \"" + incident.getTitle() + "\" is not fixed yet."));
+                }
                 // People whose reports were merged into this one follow its progress too.
                 for (Incident duplicate : incidentRepository.findByDuplicateOf_Id(incident.getId())) {
                     messages.add(new Message(Recipient.of(duplicate.getReporter()),
@@ -82,6 +100,59 @@ public class NotificationEventListener {
                                     + ", which is already being handled."
                                     + " You will be updated as it progresses."
                             : "Your report is now tracked on its own with priority " + incident.getPriority() + "."));
+            case IncidentNoteAddedEvent added -> {
+                var note = added.getNote();
+                switch (note.getType()) {
+                    case INFO_REQUEST -> messages.add(new Message(reporter, ref + ": more information needed",
+                            note.getAuthorName() + " asks: " + note.getBody()));
+                    case INFO_RESPONSE, ADDITIONAL_INFO -> {
+                        if (technician != null) {
+                            messages.add(new Message(technician, ref + ": reporter added information",
+                                    note.getAuthorName() + " wrote: " + note.getBody()));
+                        }
+                    }
+                    default -> { } // investigation notes are internal; the rest ride on status changes
+                }
+            }
+            case SlaWarningEvent warning -> {
+                if (technician != null) {
+                    messages.add(new Message(technician, ref + " SLA at risk",
+                            warning.getSlaType() + " deadline for \"" + incident.getTitle() + "\" ("
+                                    + incident.getPriority() + ") is " + warning.getDeadline() + "."));
+                }
+            }
+            case FeedbackReceivedEvent feedback -> {
+                if (technician != null) {
+                    messages.add(new Message(technician, ref + " feedback: " + incident.getFeedbackRating() + "/5",
+                            feedback.describe()));
+                }
+            }
+            case IncidentEscalatedEvent escalated -> {
+                String text = incident.getPriority() + " incident \"" + incident.getTitle()
+                        + "\" has not been acknowledged since " + incident.getCreatedAt()
+                        + " (response was due " + incident.getResponseDueAt() + "). It is now escalated to you as "
+                        + escalated.getTo() + ".";
+                messages.add(new Message(escalated.getContact(), ref + " escalated to " + escalated.getTo(), text));
+                if (technician != null) {
+                    messages.add(new Message(technician, ref + " escalated to " + escalated.getTo(),
+                            "Please acknowledge this " + incident.getPriority() + " incident now."));
+                }
+            }
+            case OutageCorrelatedEvent correlated -> {
+                var outage = correlated.getOutage();
+                String service = outage.getService().getName();
+                if (correlated.isNewOutage()) {
+                    // Operations staff (system administrator, IT manager) hear about a suspected outage.
+                    for (Recipient contact : escalationService.chain().subList(1, escalationService.chain().size())) {
+                        messages.add(new Message(contact, "Possible outage: " + service,
+                                outage.getIncidentCount() + " incidents reported against " + service
+                                        + " within a short time. Outage #" + outage.getId() + " is open."));
+                    }
+                }
+                messages.add(new Message(reporter, ref + " is part of a known outage",
+                        "Several people have reported problems with " + service + ". The IT team is treating it as"
+                                + " one outage (#" + outage.getId() + ") and you will be updated on your incident."));
+            }
             case SlaBreachedEvent breached -> {
                 String text = breached.getSlaType() + " SLA for \"" + incident.getTitle() + "\" ("
                         + incident.getPriority() + ") was breached. Deadline: " + breached.getDeadline() + ".";

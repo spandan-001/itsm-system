@@ -215,8 +215,8 @@ class AccountControllerTest {
                 .andExpect(jsonPath("$.resolvedAt").exists());
         mvc.perform(get("/api/incidents/{id}/audit", id).header(HttpHeaders.AUTHORIZATION, "Bearer technician"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].actor").value(USER_ID))
-                .andExpect(jsonPath("$[3].actor").value(TECHNICIAN_ID));
+                .andExpect(jsonPath("$[0].actor").value("employee@example.test"))
+                .andExpect(jsonPath("$[3].actor").value("assigned@example.test"));
     }
 
     @Test
@@ -282,7 +282,9 @@ class AccountControllerTest {
     private MockHttpServletRequestBuilder changeStatus(Long id, String status, String token) {
         return patch("/api/incidents/{id}/status", id).contentType(MediaType.APPLICATION_JSON)
                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
-                .content("{\"status\":\"" + status + "\"}");
+                .content("RESOLVED".equals(status)
+                        ? "{\"status\":\"RESOLVED\",\"comment\":\"Replaced the faulty switch port\"}"
+                        : "{\"status\":\"" + status + "\"}");
     }
 
     private void stubVerifiedToken() {

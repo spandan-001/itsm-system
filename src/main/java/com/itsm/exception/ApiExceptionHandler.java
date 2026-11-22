@@ -32,6 +32,11 @@ public class ApiExceptionHandler {
         return problem;
     }
 
+    @ExceptionHandler(OperationNotPermittedException.class)
+    public ProblemDetail forbidden(OperationNotPermittedException ex) {
+        return problem(HttpStatus.FORBIDDEN, "Operation not permitted", ex.getMessage());
+    }
+
     /** Any other business-rule violation. */
     @ExceptionHandler(ItsmException.class)
     public ProblemDetail businessRule(ItsmException ex) {

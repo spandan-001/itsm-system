@@ -6,6 +6,8 @@ import com.itsm.enums.Impact;
 import com.itsm.enums.Urgency;
 import com.itsm.enums.IncidentCategory;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
@@ -34,6 +36,19 @@ public class CreateIncidentRequest {
 
     @NotEmpty
     private List<@NotNull @Positive Long> serviceIds;
+
+    /** How many people the problem affects; optional, defaults to 1. */
+    @Min(1)
+    @Max(1_000_000)
+    private Integer affectedUsers;
+
+    public Integer getAffectedUsers() {
+        return affectedUsers;
+    }
+
+    public void setAffectedUsers(Integer affectedUsers) {
+        this.affectedUsers = affectedUsers;
+    }
 
     public String getTitle() {
         return title;

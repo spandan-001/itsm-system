@@ -25,9 +25,12 @@ public record IncidentSearchCriteria(
         String keyword,
         Boolean slaBreached,
         Boolean duplicate,
-        Boolean unassigned) {
+        Boolean unassigned,
+        Long incidentId,
+        Boolean awaitingInfo) {
 
     public static IncidentSearchCriteria none() {
-        return new IncidentSearchCriteria(null, null, null, null, null, null, null, null, null, null, null, null);
+        return new IncidentSearchCriteria(null, null, null, null, null, null, null, null, null, null, null, null,
+                null, null);
     }
 }

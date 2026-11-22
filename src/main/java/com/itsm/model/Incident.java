@@ -9,6 +9,7 @@ import jakarta.persistence.*;
 
 import com.itsm.enums.Priority;
 import com.itsm.enums.IncidentCategory;
+import com.itsm.enums.EscalationLevel;
 import com.itsm.enums.Impact;
 import com.itsm.enums.Urgency;
 import com.itsm.enums.IncidentStatus;
@@ -83,6 +84,57 @@ public class Incident {
     private Incident duplicateOf;
 
     private Double duplicateScore;
+
+    @Column(nullable = false)
+    private int affectedUsers = 1;
+
+    // Automatic categorisation (Naive Bayes)
+    @Enumerated(EnumType.STRING)
+    @Column(length = 40)
+    private IncidentCategory reportedCategory;
+
+    @Enumerated(EnumType.STRING)
+    @Column(length = 40)
+    private IncidentCategory suggestedCategory;
+
+    private Double classificationConfidence;
+
+    // Investigation, resolution, closure and feedback
+    @Column(nullable = false)
+    private boolean awaitingReporterInfo;
+
+    @Column(length = 2000)
+    private String resolutionSummary;
+
+    private String resolvedBy;
+
+    private LocalDateTime closedAt;
+
+    private Integer feedbackRating;
+
+    @Column(length = 1000)
+    private String feedbackComment;
+
+    private LocalDateTime feedbackAt;
+
+    // Correlation: the service outage this incident is part of
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "outage_id")
+    private ServiceOutage outage;
+
+    // Escalation of unacknowledged critical incidents
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 30)
+    private EscalationLevel escalationLevel = EscalationLevel.NONE;
+
+    private LocalDateTime escalatedAt;
+
+    // SLA early warnings, sent once per clock
+    @Column(nullable = false)
+    private boolean responseWarned;
+
+    @Column(nullable = false)
+    private boolean resolutionWarned;
 
     // SLA tracking (set by SlaService, never directly by callers)
     private LocalDateTime responseDueAt;
@@ -216,7 +268,16 @@ public class Incident {
      */
     public void transitionTo(IncidentStatus target) {
         currentState().validateTransition(this, target);
+        IncidentStatus from = this.status;
         this.status = target;
+        if (from == IncidentStatus.RESOLVED && target == IncidentStatus.IN_PROGRESS) {
+            // Reopened: the old resolution did not work; a new one is needed next time.
+            this.resolutionSummary = null;
+            this.resolvedBy = null;
+        }
+        if (target == IncidentStatus.CLOSED) {
+            this.closedAt = LocalDateTime.now();
+        }
     }
 
     /**
@@ -364,5 +425,171 @@ public class Incident {
 
     public Double getDuplicateScore() {
         return duplicateScore;
+    }
+
+    public int getAffectedUsers() {
+        return affectedUsers;
+    }
+
+    public void setAffectedUsers(int affectedUsers) {
+        if (affectedUsers < 1) {
+            throw new IllegalArgumentException("At least one user must be affected");
+        }
+        this.affectedUsers = affectedUsers;
+    }
+
+    // Classification behaviour
+
+    /**
+     * Records the classifier's suggestion. With a threshold, a confident
+     * suggestion that differs from the reporter's choice replaces it.
+     * @return true if the category was changed
+     */
+    public boolean applyClassification(IncidentCategory suggested, double confidence, Double autoCorrectThreshold) {
+        if (reportedCategory == null) {
+            reportedCategory = category;
+        }
+        suggestedCategory = suggested;
+        classificationConfidence = confidence;
+        if (autoCorrectThreshold != null && suggested != null && suggested != category
+                && confidence >= autoCorrectThreshold) {
+            category = suggested;
+            return true;
+        }
+        return false;
+    }
+
+    /** The category the reporter chose (may differ from {@link #getCategory()} after auto-correct). */
+    public IncidentCategory getReportedCategory() {
+        return reportedCategory;
+    }
+
+    public IncidentCategory getSuggestedCategory() {
+        return suggestedCategory;
+    }
+
+    public Double getClassificationConfidence() {
+        return classificationConfidence;
+    }
+
+    public boolean isAutoReclassified() {
+        return reportedCategory != null && reportedCategory != category;
+    }
+
+    // Outage correlation behaviour
+
+    public void linkToOutage(ServiceOutage outage) {
+        this.outage = outage;
+    }
+
+    /** The outage, or null. Not a bean getter, so JSON shows only the id. */
+    public ServiceOutage outage() {
+        return outage;
+    }
+
+    public Long getOutageId() {
+        return outage == null ? null : outage.getId();
+    }
+
+    // Escalation behaviour
+
+    /** Moves up the escalation chain; never down. Returns false if already at or above that level. */
+    public boolean escalateTo(EscalationLevel level) {
+        if (level.ordinal() <= escalationLevel.ordinal()) {
+            return false;
+        }
+        escalationLevel = level;
+        escalatedAt = LocalDateTime.now();
+        return true;
+    }
+
+    public EscalationLevel getEscalationLevel() {
+        return escalationLevel;
+    }
+
+    public LocalDateTime getEscalatedAt() {
+        return escalatedAt;
+    }
+
+    // Investigation, resolution and feedback behaviour
+
+    /** Records how the incident was fixed. Required before moving to RESOLVED. */
+    public void provideResolution(String summary, String resolvedBy) {
+        if (summary == null || summary.isBlank()) {
+            throw new IllegalArgumentException("A resolution summary is required");
+        }
+        this.resolutionSummary = summary.trim();
+        this.resolvedBy = resolvedBy;
+    }
+
+    public void requestInfoFromReporter() {
+        this.awaitingReporterInfo = true;
+    }
+
+    public void reporterInfoReceived() {
+        this.awaitingReporterInfo = false;
+    }
+
+    /**
+     * The reporter's rating (1-5) of the resolution, given once after it is resolved.
+     * @throws com.itsm.exception.BusinessRuleException if it is too early or already given
+     */
+    public void recordFeedback(int rating, String comment) {
+        if (rating < 1 || rating > 5) {
+            throw new IllegalArgumentException("Rating must be between 1 and 5");
+        }
+        if (status != IncidentStatus.RESOLVED && status != IncidentStatus.VERIFIED && status != IncidentStatus.CLOSED) {
+            throw new com.itsm.exception.BusinessRuleException("Feedback can be given once the incident is resolved");
+        }
+        if (feedbackRating != null) {
+            throw new com.itsm.exception.BusinessRuleException("Feedback has already been given for this incident");
+        }
+        this.feedbackRating = rating;
+        this.feedbackComment = (comment == null || comment.isBlank()) ? null : comment.trim();
+        this.feedbackAt = LocalDateTime.now();
+    }
+
+    public void markResponseWarned() {
+        responseWarned = true;
+    }
+
+    public void markResolutionWarned() {
+        resolutionWarned = true;
+    }
+
+    public boolean isAwaitingReporterInfo() {
+        return awaitingReporterInfo;
+    }
+
+    public String getResolutionSummary() {
+        return resolutionSummary;
+    }
+
+    public String getResolvedBy() {
+        return resolvedBy;
+    }
+
+    public LocalDateTime getClosedAt() {
+        return closedAt;
+    }
+
+    public Integer getFeedbackRating() {
+        return feedbackRating;
+    }
+
+    public String getFeedbackComment() {
+        return feedbackComment;
+    }
+
+    public LocalDateTime getFeedbackAt() {
+        return feedbackAt;
+    }
+
+    public boolean isResponseWarned() {
+        return responseWarned;
+    }
+
+    public boolean isResolutionWarned() {
+        return resolutionWarned;
     }
 }

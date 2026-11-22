@@ -19,8 +19,10 @@ import com.itsm.model.Technician;
 import com.itsm.repository.AuditLogRepository;
 import com.itsm.repository.EmployeeRepository;
 import com.itsm.repository.ITServiceRepository;
+import com.itsm.repository.IncidentNoteRepository;
 import com.itsm.repository.IncidentRepository;
 import com.itsm.repository.NotificationRepository;
+import com.itsm.repository.ServiceOutageRepository;
 import com.itsm.repository.TechnicianRepository;
 import com.itsm.service.IncidentService;
 
@@ -35,6 +37,8 @@ public abstract class IntegrationTestSupport {
     @Autowired protected IncidentService incidentService;
     @Autowired protected IncidentRepository incidentRepository;
     @Autowired protected AuditLogRepository auditLogRepository;
+    @Autowired protected IncidentNoteRepository noteRepository;
+    @Autowired protected ServiceOutageRepository outageRepository;
     @Autowired protected NotificationRepository notificationRepository;
     @Autowired protected EmployeeRepository employeeRepository;
     @Autowired protected TechnicianRepository technicianRepository;
@@ -48,9 +52,11 @@ public abstract class IntegrationTestSupport {
     void resetDatabase() {
         notificationRepository.deleteAll();
         auditLogRepository.deleteAll();
+        noteRepository.deleteAll();
         // Duplicates reference their original, so delete them first.
         incidentRepository.deleteAll(incidentRepository.findAll().stream().filter(Incident::isDuplicate).toList());
         incidentRepository.deleteAll();
+        outageRepository.deleteAll();
         employeeRepository.deleteAll();
         technicianRepository.deleteAll();
         itServiceRepository.deleteAll();

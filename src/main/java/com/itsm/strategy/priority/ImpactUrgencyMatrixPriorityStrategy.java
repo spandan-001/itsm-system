@@ -11,7 +11,8 @@ import com.itsm.model.ITService;
 
 /**
  * The classic ITIL impact/urgency matrix, raised one level when a
- * business-critical (HIGH) service is affected.
+ * business-critical (HIGH) service is affected, and one more level each at
+ * 10 and 100 affected people.
  *
  * <pre>
  *              urgency LOW  MEDIUM  HIGH
@@ -34,17 +35,18 @@ public class ImpactUrgencyMatrixPriorityStrategy implements PriorityStrategy {
     }
 
     @Override
-    public Priority calculate(Impact impact, Urgency urgency, List<ITService> affectedServices) {
-        int sum = PriorityStrategy.level(impact) + PriorityStrategy.level(urgency); // 2..6
+    public Priority calculate(PriorityFactors factors) {
+        int sum = PriorityStrategy.level(factors.impact()) + PriorityStrategy.level(factors.urgency()); // 2..6
         int index = switch (sum) {
             case 6 -> 0;  // P1
             case 5 -> 1;  // P2
             case 4 -> 2;  // P3
             default -> 3; // P4
         };
-        if (PriorityStrategy.highestCriticality(affectedServices) == 3) {
-            index = Math.max(0, index - 1);
+        if (PriorityStrategy.highestCriticality(factors.affectedServices()) == 3) {
+            index--;
         }
+        index = Math.max(0, index - factors.userScale());
         return Priority.values()[index];
     }
 }

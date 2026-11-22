@@ -23,6 +23,8 @@ import com.itsm.model.Technician;
 import com.itsm.repository.EmployeeRepository;
 import com.itsm.repository.ITServiceRepository;
 import com.itsm.repository.TechnicianRepository;
+import com.itsm.model.AccountLink.Role;
+import com.itsm.service.AccountService;
 import com.itsm.service.IncidentService;
 
 /**
@@ -75,11 +77,24 @@ public class DemoDataSeeder implements ApplicationRunner {
         technicians.save(new Technician("Kavya Reddy", "kavya.reddy@example.test", "AUTHENTICATION", false,
                 EnumSet.of(IncidentCategory.AUTHENTICATION, IncidentCategory.CLOUD)));
 
+        // A past outage, already fixed and rated: its fix is suggested for the new Wi-Fi incident below.
+        Incident pastWifi = create("Library wireless access point offline", "Wi-Fi in the library reading room stopped working for everyone.",
+                IncidentCategory.NETWORK, Impact.HIGH, Urgency.HIGH, vikram, wifi);
+        advance(pastWifi, IncidentStatus.ACKNOWLEDGED, IncidentStatus.IN_PROGRESS);
+        incidentService.updateStatus(pastWifi.getId(), IncidentStatus.RESOLVED,
+                "Access point AP-3 had crashed. Power-cycled it from the controller and updated its firmware to 8.10.");
+        advance(pastWifi, IncidentStatus.VERIFIED, IncidentStatus.CLOSED);
+        incidentService.recordFeedback(pastWifi.getId(), 5, "Fixed within the hour, thank you",
+                new AccountService.LinkedAccount(Role.EMPLOYEE, vikram.getId(), vikram.getEmail()));
+
         Incident wifiDown = create("Campus Wi-Fi down in library", "No devices can connect to the Wi-Fi on any floor of the library.",
                 IncidentCategory.NETWORK, Impact.HIGH, Urgency.HIGH, neha, wifi);
         // Detected as a duplicate of the one above.
         create("Library wifi not working", "Wi-Fi in the library is down, laptops cannot connect.",
                 IncidentCategory.NETWORK, Impact.MEDIUM, Urgency.HIGH, asha, wifi);
+        // A third report on Campus Wi-Fi within minutes: correlated into a suspected service outage.
+        create("Reading room laptops have no internet", "Students in the reading room say the network is unreachable.",
+                IncidentCategory.NETWORK, Impact.MEDIUM, Urgency.HIGH, vikram, wifi);
         Incident portalSlow = create("Student portal very slow", "Pages take over 30 seconds to load during registration.",
                 IncidentCategory.APPLICATION, Impact.MEDIUM, Urgency.MEDIUM, vikram, portal);
         Incident printer = create("Printer jammed on 2nd floor", "The shared printer near finance keeps jamming.",
@@ -90,12 +105,16 @@ public class DemoDataSeeder implements ApplicationRunner {
                 IncidentCategory.DATABASE, Impact.MEDIUM, Urgency.MEDIUM, neha, library);
 
         advance(wifiDown, IncidentStatus.ACKNOWLEDGED, IncidentStatus.IN_PROGRESS);
-        advance(portalSlow, IncidentStatus.ACKNOWLEDGED, IncidentStatus.IN_PROGRESS, IncidentStatus.RESOLVED);
-        advance(printer, IncidentStatus.ACKNOWLEDGED, IncidentStatus.IN_PROGRESS, IncidentStatus.RESOLVED,
-                IncidentStatus.VERIFIED, IncidentStatus.CLOSED);
+        advance(portalSlow, IncidentStatus.ACKNOWLEDGED, IncidentStatus.IN_PROGRESS);
+        incidentService.updateStatus(portalSlow.getId(), IncidentStatus.RESOLVED,
+                "Added a database index on the registration table; page loads are under 2 seconds again.");
+        advance(printer, IncidentStatus.ACKNOWLEDGED, IncidentStatus.IN_PROGRESS);
+        incidentService.updateStatus(printer.getId(), IncidentStatus.RESOLVED,
+                "Replaced the worn pickup roller and cleared the paper path.");
+        advance(printer, IncidentStatus.VERIFIED, IncidentStatus.CLOSED);
 
         log.info("Seeded demo data: {} services, {} employees, {} technicians, {} incidents",
-                services.count(), employees.count(), technicians.count(), 6);
+                services.count(), employees.count(), technicians.count(), 8);
     }
 
     private Incident create(String title, String description, IncidentCategory category, Impact impact,

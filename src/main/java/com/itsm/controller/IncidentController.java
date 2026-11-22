@@ -3,6 +3,7 @@ package com.itsm.controller;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.Size;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
@@ -61,7 +62,8 @@ public class IncidentController {
             request.getImpact(),
             request.getUrgency(),
             account.id(),
-            request.getServiceIds()
+            request.getServiceIds(),
+            request.getAffectedUsers() == null ? 1 : request.getAffectedUsers()
         );
     }
 
@@ -72,10 +74,12 @@ public class IncidentController {
 
     @PatchMapping("/{id}/status")
     public Incident updateStatus(@PathVariable Long id, @Valid @RequestBody UpdateStatusRequest request) {
-        return incidentService.updateStatus(id, request.status(), accountService.requireCurrentAccount());
+        return incidentService.updateStatus(id, request.status(), request.comment(),
+                accountService.requireCurrentAccount());
     }
 
     public record AssignTechnicianRequest(@NotNull @Positive Long technicianId) {}
 
-    public record UpdateStatusRequest(@NotNull IncidentStatus status) {}
+    /** {@code comment} is the resolution summary for RESOLVED (required), the reason when reopening, else a note. */
+    public record UpdateStatusRequest(@NotNull IncidentStatus status, @Size(max = 2000) String comment) {}
 }

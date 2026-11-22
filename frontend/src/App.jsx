@@ -46,7 +46,7 @@ function App() {
   if (identity?.accessToken !== accessToken) return <Login message="Checking your ITSM access…" disabled />;
   if (identity.error) {
     const message = identity.error.status === 403
-      ? 'Your Google account is signed in. Ask the ITSM team to link it to an employee or technician.'
+      ? 'Your account is signed in. Ask the ITSM team to link it to an employee or technician.'
       : identity.error.message;
     return <Login message={message} signedIn />;
   }

@@ -8,9 +8,7 @@ import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.web.server.ResponseStatusException;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,7 +16,15 @@ import com.itsm.enums.Impact;
 import com.itsm.enums.IncidentCategory;
 import com.itsm.enums.IncidentStatus;
 import com.itsm.enums.Urgency;
+import com.itsm.enums.NoteType;
 import com.itsm.event.DuplicateLinkEvent;
+import com.itsm.event.FeedbackReceivedEvent;
+import com.itsm.exception.OperationNotPermittedException;
+import com.itsm.exception.TechnicianWorkloadExceededException;
+import com.itsm.model.AccountLink.Role;
+import com.itsm.service.classification.ClassificationService;
+import com.itsm.service.note.NoteService;
+import com.itsm.strategy.assignment.TechnicianCandidate;
 import com.itsm.event.IncidentAssignedEvent;
 import com.itsm.event.IncidentCreatedEvent;
 import com.itsm.event.IncidentStatusChangedEvent;
@@ -60,6 +66,8 @@ public class IncidentService {
     private final DuplicateDetector duplicateDetector;
     private final RoutingService routingService;
     private final CurrentActorProvider actorProvider;
+    private final NoteService noteService;
+    private final ClassificationService classificationService;
     private final ApplicationEventPublisher eventPublisher;
     private final boolean autoRouting;
 
@@ -73,6 +81,8 @@ public class IncidentService {
             DuplicateDetector duplicateDetector,
             RoutingService routingService,
             CurrentActorProvider actorProvider,
+            NoteService noteService,
+            ClassificationService classificationService,
             ApplicationEventPublisher eventPublisher,
             @Value("${itsm.routing.auto-assign:true}") boolean autoRouting) {
 
@@ -85,6 +95,8 @@ public class IncidentService {
         this.duplicateDetector = duplicateDetector;
         this.routingService = routingService;
         this.actorProvider = actorProvider;
+        this.noteService = noteService;
+        this.classificationService = classificationService;
         this.eventPublisher = eventPublisher;
         this.autoRouting = autoRouting;
     }
@@ -121,6 +133,19 @@ public class IncidentService {
             Urgency urgency,
             Long reporterId,
             List<Long> serviceIds) {
+        return createIncident(title, description, category, impact, urgency, reporterId, serviceIds, 1);
+    }
+
+    @Transactional
+    public Incident createIncident(
+            String title,
+            String description,
+            IncidentCategory category,
+            Impact impact,
+            Urgency urgency,
+            Long reporterId,
+            List<Long> serviceIds,
+            int affectedUsers) {
 
         Employee reporter = employeeRepository.findById(reporterId)
                 .orElseThrow(() -> new ResourceNotFoundException("Employee", reporterId));
@@ -132,7 +157,11 @@ public class IncidentService {
         }
 
         Incident incident = new Incident(title, description, category, impact, urgency, reporter, affectedServices);
-        incident.setPriority(priorityCalculator.calculate(impact, urgency, affectedServices));
+        incident.setAffectedUsers(affectedUsers);
+        incident.setPriority(priorityCalculator.calculate(
+                new com.itsm.strategy.priority.PriorityFactors(impact, urgency, affectedServices, affectedUsers)));
+        // Before duplicate detection and routing, which both depend on the category.
+        classificationService.classify(incident);
 
         // A duplicate is linked to the original and not given its own SLA or technician.
         Optional<DuplicateDetector.ScoredIncident> duplicate = duplicateDetector.findDuplicate(incident);
@@ -186,6 +215,11 @@ public class IncidentService {
         if (!technician.isAvailable()) {
             throw new TechnicianUnavailableException(technician.getName(), "marked unavailable");
         }
+        long active = routingService.activeWorkload().getOrDefault(technicianId, 0L);
+        if (active >= TechnicianCandidate.MAX_ACTIVE_INCIDENTS) {
+            throw new TechnicianWorkloadExceededException(technician.getName(), active,
+                    TechnicianCandidate.MAX_ACTIVE_INCIDENTS);
+        }
         assign(incident, technician);
         return incident;
     }
@@ -225,37 +259,85 @@ public class IncidentService {
 
     /**
      * Moves an incident to the requested status if its current state allows it.
+     * Moving to RESOLVED needs a resolution summary: use the overload with a comment.
      * @throws com.itsm.exception.InvalidStateTransitionException for an illegal move
      */
     @Transactional
     public Incident updateStatus(Long id, IncidentStatus status) {
-        return updateStatus(getIncidentForUpdate(id), status);
+        return applyStatus(getIncidentForUpdate(id), status, null, null);
     }
 
-    private Incident updateStatus(Incident incident, IncidentStatus status) {
+    /**
+     * As {@link #updateStatus(Long, IncidentStatus)}, with a comment: the resolution
+     * summary for RESOLVED, the reason when reopening, otherwise a note on the thread.
+     */
+    @Transactional
+    public Incident updateStatus(Long id, IncidentStatus status, String comment) {
+        return applyStatus(getIncidentForUpdate(id), status, comment, null);
+    }
+
+    @Transactional
+    public Incident updateStatus(Long id, IncidentStatus status, AccountService.LinkedAccount account) {
+        return updateStatus(id, status, null, account);
+    }
+
+    /** Status change by a signed-in user; each role may make only its own moves. */
+    @Transactional
+    public Incident updateStatus(Long id, IncidentStatus status, String comment, AccountService.LinkedAccount account) {
+        Incident incident = getIncidentForUpdate(id);
+        account.requireAccess(incident);
+        boolean reopening = incident.getStatus() == IncidentStatus.RESOLVED && status == IncidentStatus.IN_PROGRESS;
+        boolean allowed = switch (account.role()) {
+            // Reporters confirm the fix (verify, close) or reject it (reopen).
+            case EMPLOYEE -> status == IncidentStatus.VERIFIED || status == IncidentStatus.CLOSED || reopening;
+            case TECHNICIAN -> status == IncidentStatus.ACKNOWLEDGED
+                    || status == IncidentStatus.IN_PROGRESS || status == IncidentStatus.RESOLVED;
+            case ADMIN -> true; // the state machine still blocks illegal moves
+        };
+        if (!allowed) {
+            throw new OperationNotPermittedException(account.role() + " accounts cannot set status " + status);
+        }
+        return applyStatus(incident, status, comment, account);
+    }
+
+    private Incident applyStatus(Incident incident, IncidentStatus status, String comment,
+                                 AccountService.LinkedAccount account) {
         if (incident.getStatus() == status) {
             return incident;
         }
         if (incident.isDuplicate()) {
             throw new DuplicateLockedException(incident);
         }
-        transition(incident, status);
+        boolean hasComment = comment != null && !comment.isBlank();
+        boolean reopening = incident.getStatus() == IncidentStatus.RESOLVED && status == IncidentStatus.IN_PROGRESS;
+        if (status == IncidentStatus.RESOLVED && hasComment) {
+            // Recorded first so the audit trail reads "resolution provided", then "resolved".
+            incident.provideResolution(comment, account != null ? account.email() : actor());
+            noteService.record(incident, NoteType.RESOLUTION, comment, account);
+        }
+        transition(incident, status); // ResolvedState rejects a missing summary
+        if (status != IncidentStatus.RESOLVED && hasComment) {
+            noteService.record(incident, reopening ? NoteType.REOPEN_REASON : NoteType.STATUS_COMMENT, comment, account);
+        }
         return incident;
     }
 
+    // ---- Feedback ----
+
+    /**
+     * The reporter rates the resolution (1-5) once it is resolved.
+     * @throws OperationNotPermittedException if the caller is not the reporter
+     */
     @Transactional
-    public Incident updateStatus(Long id, IncidentStatus status, AccountService.LinkedAccount account) {
+    public Incident recordFeedback(Long id, int rating, String comment, AccountService.LinkedAccount account) {
         Incident incident = getIncidentForUpdate(id);
         account.requireAccess(incident);
-        boolean allowed = switch (account.role()) {
-            case EMPLOYEE -> status == IncidentStatus.VERIFIED || status == IncidentStatus.CLOSED;
-            case TECHNICIAN -> status == IncidentStatus.ACKNOWLEDGED
-                    || status == IncidentStatus.IN_PROGRESS || status == IncidentStatus.RESOLVED;
-        };
-        if (!allowed) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "This role cannot set the requested status");
+        if (account.role() != Role.EMPLOYEE) {
+            throw new OperationNotPermittedException("Only the reporter can give feedback");
         }
-        return updateStatus(incident, status);
+        incident.recordFeedback(rating, comment);
+        eventPublisher.publishEvent(new FeedbackReceivedEvent(incident, actor()));
+        return incident;
     }
 
     private void transition(Incident incident, IncidentStatus target) {

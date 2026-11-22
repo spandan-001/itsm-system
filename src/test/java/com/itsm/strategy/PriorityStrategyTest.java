@@ -14,6 +14,7 @@ import com.itsm.enums.Urgency;
 import com.itsm.model.ITService;
 import com.itsm.strategy.priority.ImpactUrgencyMatrixPriorityStrategy;
 import com.itsm.strategy.priority.PriorityCalculator;
+import com.itsm.strategy.priority.PriorityFactors;
 import com.itsm.strategy.priority.PriorityStrategy;
 import com.itsm.strategy.priority.WeightedScorePriorityStrategy;
 
@@ -39,6 +40,23 @@ class PriorityStrategyTest {
         assertThat(matrix.calculate(Impact.HIGH, Urgency.MEDIUM, service(BusinessCriticality.HIGH))).isEqualTo(Priority.P1);
         assertThat(matrix.calculate(Impact.HIGH, Urgency.HIGH, service(BusinessCriticality.HIGH))).isEqualTo(Priority.P1);
         assertThat(matrix.calculate(Impact.LOW, Urgency.LOW, service(BusinessCriticality.MEDIUM))).isEqualTo(Priority.P4);
+    }
+
+    @Test
+    void moreAffectedUsersRaisePriority() {
+        List<ITService> medium = service(BusinessCriticality.MEDIUM);
+        PriorityStrategy weighted = new WeightedScorePriorityStrategy();
+        PriorityStrategy matrix = new ImpactUrgencyMatrixPriorityStrategy();
+
+        // weighted: 2 x 2 x 2 = 8 is P3; x1.5 = 12 is P2; x2 = 16 is still P2
+        assertThat(weighted.calculate(new PriorityFactors(Impact.MEDIUM, Urgency.MEDIUM, medium, 1))).isEqualTo(Priority.P3);
+        assertThat(weighted.calculate(new PriorityFactors(Impact.MEDIUM, Urgency.MEDIUM, medium, 25))).isEqualTo(Priority.P2);
+        // matrix: medium/medium is P3; one level up at 10 users, two at 100
+        assertThat(matrix.calculate(new PriorityFactors(Impact.MEDIUM, Urgency.MEDIUM, medium, 1))).isEqualTo(Priority.P3);
+        assertThat(matrix.calculate(new PriorityFactors(Impact.MEDIUM, Urgency.MEDIUM, medium, 10))).isEqualTo(Priority.P2);
+        assertThat(matrix.calculate(new PriorityFactors(Impact.MEDIUM, Urgency.MEDIUM, medium, 500))).isEqualTo(Priority.P1);
+        assertThatThrownBy(() -> new PriorityFactors(Impact.LOW, Urgency.LOW, medium, 0))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test

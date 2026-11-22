@@ -18,11 +18,17 @@ import com.itsm.service.sla.SlaSnapshot;
 public class SlaController {
 
     private final SlaService slaService;
+    private final com.itsm.service.escalation.EscalationService escalationService;
+    private final com.itsm.service.sla.SlaPredictionService predictions;
     private final IncidentService incidentService;
     private final AccountService accounts;
 
-    public SlaController(SlaService slaService, IncidentService incidentService, AccountService accounts) {
+    public SlaController(SlaService slaService, IncidentService incidentService, AccountService accounts,
+                         com.itsm.service.escalation.EscalationService escalationService,
+                         com.itsm.service.sla.SlaPredictionService predictions) {
         this.slaService = slaService;
+        this.escalationService = escalationService;
+        this.predictions = predictions;
         this.incidentService = incidentService;
         this.accounts = accounts;
     }
@@ -46,6 +52,18 @@ public class SlaController {
         return slaService.evaluate(incidentService.getIncident(id, accounts.requireCurrentAccount()));
     }
 
+    /** When this incident is likely to be resolved, and whether that beats the deadline. */
+    @GetMapping("/api/incidents/{id}/sla-prediction")
+    public com.itsm.service.sla.SlaPrediction prediction(@PathVariable Long id) {
+        return predictions.predict(incidentService.getIncident(id, accounts.requireCurrentAccount()));
+    }
+
+    /** Open incidents predicted to miss their deadline (administrators). */
+    @GetMapping("/api/sla/at-risk")
+    public List<com.itsm.service.sla.SlaPrediction> atRisk() {
+        return predictions.atRisk();
+    }
+
     @GetMapping("/api/sla/breaches")
     public List<SlaSnapshot> breaches() {
         return slaService.breachedIncidents();
@@ -54,6 +72,7 @@ public class SlaController {
     /** Runs breach detection now instead of waiting for the scheduler (handy for demos). */
     @PostMapping("/api/sla/check")
     public Map<String, Integer> checkNow() {
-        return Map.of("newBreaches", slaService.detectBreaches());
+        return Map.of("newWarnings", slaService.detectWarnings(), "newBreaches", slaService.detectBreaches(),
+                "newEscalations", escalationService.escalate());
     }
 }

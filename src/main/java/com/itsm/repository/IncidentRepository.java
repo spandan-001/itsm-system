@@ -29,6 +29,16 @@ public interface IncidentRepository extends JpaRepository<Incident, Long>, JpaSp
 
     List<Incident> findByResponseBreachedTrueOrResolutionBreachedTrue();
 
+    /** Incidents with an open SLA clock that has not been warned about or breached yet. */
+    @Query("""
+            select i.id from Incident i
+            where (i.respondedAt is null and i.responseDueAt is not null
+                   and i.responseWarned = false and i.responseBreached = false)
+               or (i.resolvedAt is null and i.resolutionDueAt is not null
+                   and i.resolutionWarned = false and i.resolutionBreached = false)
+            order by i.id""")
+    List<Long> findWarningCandidateIds();
+
     // Routing
     List<Incident> findByStatusOrderByCreatedAtAsc(IncidentStatus status);
 
@@ -53,6 +63,30 @@ public interface IncidentRepository extends JpaRepository<Incident, Long>, JpaSp
             IncidentCategory category, Collection<IncidentStatus> excludedStatuses, LocalDateTime since);
 
     List<Incident> findByDuplicateOf_Id(Long originalId);
+
+    /** Unacknowledged, non-duplicate incidents that could still escalate. */
+    @Query("""
+            select i.id from Incident i
+            where i.respondedAt is null and i.responseDueAt is not null and i.duplicateOf is null
+              and i.priority in :priorities and i.status in :statuses
+              and i.escalationLevel <> com.itsm.enums.EscalationLevel.IT_MANAGER
+            order by i.id""")
+    List<Long> findEscalationCandidateIds(@Param("priorities") Collection<com.itsm.enums.Priority> priorities,
+                                          @Param("statuses") Collection<IncidentStatus> statuses);
+
+    /** Open incidents (duplicates included: they are evidence too) on a service, reported since a time. */
+    @Query("""
+            select i from Incident i join i.affectedServices s
+            where s.id = :serviceId and i.createdAt >= :since and i.status not in :closed
+            order by i.createdAt""")
+    List<Incident> findRecentOpenOnService(@Param("serviceId") Long serviceId, @Param("since") LocalDateTime since,
+                                           @Param("closed") Collection<IncidentStatus> closed);
+
+    @Query("select count(i) from Incident i where i.outage.id = :outageId and i.status not in :closed")
+    long countOpenInOutage(@Param("outageId") Long outageId, @Param("closed") Collection<IncidentStatus> closed);
+
+    // Suggested resolutions: incidents with a recorded fix
+    List<Incident> findByResolutionSummaryIsNotNullAndDuplicateOfIsNull();
 
     interface TechnicianCount {
         Long getTechnicianId();

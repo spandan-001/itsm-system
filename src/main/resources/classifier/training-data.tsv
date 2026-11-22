@@ -1,0 +1,363 @@
+# Labelled example incidents for the Naive Bayes category classifier.
+# Format: CATEGORY<TAB>report text. Lines starting with # are ignored.
+# Resolved incidents in the database are added to these at training time.
+HARDWARE	Laptop will not power on even when plugged in to the charger
+HARDWARE	Monitor flickers and goes black every few minutes
+HARDWARE	Printer jammed on the second floor and shows a paper jam light
+HARDWARE	Keyboard keys stopped working after coffee spill
+HARDWARE	Desktop fan is very loud and the computer overheats
+HARDWARE	Projector in seminar room shows no signal from the HDMI cable
+HARDWARE	Mouse not detected when connected to the docking station
+HARDWARE	Laptop battery drains in under an hour and swelling case
+HARDWARE	Printer out of toner and prints faded pages
+HARDWARE	Blue screen after installing new RAM module in workstation
+HARDWARE	Scanner makes grinding noise and paper feed is broken
+HARDWARE	Docking station USB ports not working for external devices
+HARDWARE	Laptop screen cracked after being dropped
+HARDWARE	Headset microphone not picking up sound in the lab computer
+HARDWARE	Webcam shows black image on conference room PC
+HARDWARE	Hard disk clicking noise and computer very slow to boot
+HARDWARE	Shared printer shows offline and print jobs stuck in queue
+HARDWARE	Power supply burnt smell from desktop under the desk
+HARDWARE	Touchpad on laptop stopped responding to clicks
+HARDWARE	Second monitor not detected by graphics card
+HARDWARE	Barcode reader at library desk does not beep or scan
+HARDWARE	Laptop charger port loose and only charges at an angle
+SOFTWARE	Microsoft Excel crashes when opening large spreadsheets
+SOFTWARE	Need a licence for MATLAB installed on my workstation
+SOFTWARE	Word document freezes when inserting images
+SOFTWARE	Antivirus update failed with error code on startup
+SOFTWARE	Operating system update stuck at thirty percent and will not finish
+SOFTWARE	Zoom client shows audio driver error after update
+SOFTWARE	PDF reader cannot open files and says the file is damaged
+SOFTWARE	Adobe licence expired and Photoshop asks for activation
+SOFTWARE	Software installation blocked by administrator rights prompt
+SOFTWARE	Outlook desktop client keeps crashing when searching mail
+SOFTWARE	Python packages fail to install in the lab image
+SOFTWARE	Teams desktop app shows white screen after launching
+SOFTWARE	Browser extension for referencing tool no longer loads
+SOFTWARE	Windows update broke the printer driver software
+SOFTWARE	Visual Studio cannot load project after upgrade
+SOFTWARE	Statistics package SPSS licence server not reachable from installer
+SOFTWARE	PowerPoint presentation will not save and shows an error
+SOFTWARE	Need the latest version of AutoCAD installed in design lab
+SOFTWARE	Media player codec missing so lecture videos do not play
+SOFTWARE	Desktop application freezes on launch after patch
+SOFTWARE	Spreadsheet macros disabled after office suite upgrade
+SOFTWARE	Java runtime outdated and the lab software refuses to run
+NETWORK	Campus WiFi down in the library and nobody can connect
+NETWORK	Wireless keeps disconnecting every few minutes in hostel block
+NETWORK	No internet access on the third floor wired ports
+NETWORK	VPN connection drops when working from home
+NETWORK	Very slow network speed when downloading files
+NETWORK	Ethernet port in lecture hall shows no link light
+NETWORK	DNS not resolving internal website names
+NETWORK	Router in admin block restarting repeatedly
+NETWORK	High latency and packet loss on video calls from office
+NETWORK	WiFi network name not visible in the new building wing
+NETWORK	Cannot reach any websites but wifi shows connected with no internet
+NETWORK	Network switch in server room has flashing amber lights
+NETWORK	Remote desktop to lab machines times out over the network
+NETWORK	Proxy server blocking access to research journals site
+NETWORK	IP address conflict warning on laptop when connecting
+NETWORK	Wireless access point offline in the cafeteria
+NETWORK	Internet outage across the whole campus since morning
+NETWORK	VPN client cannot reach the gateway and times out
+NETWORK	Firewall rule blocking video conferencing ports
+NETWORK	Weak wifi signal in the reading room and connection very slow
+NETWORK	DHCP not assigning addresses to devices in the lab
+NETWORK	Network cable damaged and connection keeps dropping
+DATABASE	Database queries timing out on the student records system
+DATABASE	SQL server connection refused for the reporting application
+DATABASE	Duplicate records appearing in the alumni database table
+DATABASE	Database backup job failed overnight with disk error
+DATABASE	Deadlock errors when updating grades in the database
+DATABASE	Library catalogue database search returns error for every query
+DATABASE	Oracle database tablespace full and inserts failing
+DATABASE	Replication lag between primary and replica database servers
+DATABASE	Reports show stale data because the database sync stopped
+DATABASE	Stored procedure returns wrong totals after schema change
+DATABASE	Database migration script failed halfway through
+DATABASE	Too many connections error from the PostgreSQL server
+DATABASE	Corrupted index on the attendance table slows queries
+DATABASE	Cannot restore database from last night backup file
+DATABASE	Data warehouse load job failed and dashboards are empty
+DATABASE	Query on finance ledger table takes several minutes
+DATABASE	Database user account locked after password rotation
+DATABASE	Missing rows in exam results table after import
+DATABASE	MySQL service stopped and the web app shows database error
+DATABASE	Foreign key constraint errors when saving enrolment records
+DATABASE	Database disk usage at ninety five percent alert
+DATABASE	Transaction log growing very fast on the main database
+CLOUD	AWS virtual machine instance not starting in the console
+CLOUD	Cloud storage bucket billing alert exceeded budget
+CLOUD	Azure subscription quota reached and deployments fail
+CLOUD	Kubernetes pods crash looping in the cloud cluster
+CLOUD	Serverless function timing out after cloud provider update
+CLOUD	Cloud hosted website down because the load balancer failed
+CLOUD	Google Cloud project permissions missing for research team
+CLOUD	Container registry push denied in the cloud account
+CLOUD	Auto scaling group not adding instances under load
+CLOUD	Cloud backup snapshots not being created on schedule
+CLOUD	SaaS platform outage reported by the cloud vendor status page
+CLOUD	Virtual machines in the cloud region unreachable
+CLOUD	Cloud VM disk full and the hosted service stopped
+CLOUD	Need a new cloud environment provisioned for the project
+CLOUD	Cloud cost spike from forgotten GPU instances
+CLOUD	Terraform deployment to the cloud fails with quota error
+CLOUD	Managed cloud database instance restarting unexpectedly
+CLOUD	CDN not serving updated content from cloud storage
+CLOUD	Cloud API gateway returning throttling errors
+CLOUD	Docker containers on the cloud host stopped after reboot
+CLOUD	Cloud identity federation misconfigured for the tenant
+CLOUD	Object storage access keys expired for the cloud app
+SECURITY	Received phishing email asking for my bank details
+SECURITY	Suspicious login alert from unknown country on my account
+SECURITY	Laptop infected with ransomware and files encrypted
+SECURITY	Malware detected by antivirus on shared lab computer
+SECURITY	Lost laptop with confidential data needs to be wiped
+SECURITY	Someone accessed restricted files without permission
+SECURITY	Spam emails flooding staff inboxes with malicious links
+SECURITY	Firewall logs show port scanning from external address
+SECURITY	USB drive found with suspicious autorun program
+SECURITY	Data breach suspected after customer records leaked online
+SECURITY	Vulnerability scan found outdated SSL certificate on server
+SECURITY	Unauthorised device connected to the secure network segment
+SECURITY	Employee shared credentials over email by mistake
+SECURITY	Website defaced and showing hacked message
+SECURITY	Trojan virus warning pop up on finance computer
+SECURITY	Need security review of new vendor before data sharing
+SECURITY	Brute force attack attempts on the student portal login
+SECURITY	Sensitive documents printed and left unattended in public area
+SECURITY	Security camera recording system offline at entrance
+SECURITY	Suspicious process sending data to an unknown server
+SECURITY	Spoofed email pretending to be the director requesting gift cards
+SECURITY	Encryption missing on backup drive with personal data
+AUTHENTICATION	Forgot my password and the reset link never arrives
+AUTHENTICATION	Account locked after too many failed login attempts
+AUTHENTICATION	Single sign on fails with invalid credentials error
+AUTHENTICATION	Two factor authentication code not received on phone
+AUTHENTICATION	Cannot log in to email with my username and password
+AUTHENTICATION	SSO login loop keeps redirecting back to the sign in page
+AUTHENTICATION	Multi factor authenticator app lost with my old phone
+AUTHENTICATION	New employee account not created so cannot sign in
+AUTHENTICATION	Password expired and the change password page shows error
+AUTHENTICATION	Google sign in says account not authorised for this domain
+AUTHENTICATION	Smart card login not accepted at the workstation
+AUTHENTICATION	Login fails after changing my password yesterday
+AUTHENTICATION	OTP verification fails for the student portal sign in
+AUTHENTICATION	Access denied to shared drive although I should have permission
+AUTHENTICATION	LDAP authentication error when logging into lab machines
+AUTHENTICATION	Session expires immediately after logging in
+AUTHENTICATION	Need my account unlocked for the HR system login
+AUTHENTICATION	Wrong role assigned so I cannot access the admin login
+AUTHENTICATION	Biometric fingerprint login not recognising me
+AUTHENTICATION	Username shows as disabled when trying to sign in
+AUTHENTICATION	Security questions for password recovery not accepted
+AUTHENTICATION	Token authentication failed for API access credentials
+APPLICATION	Payment application unavailable and users unable to complete transactions
+APPLICATION	Student portal very slow during course registration
+APPLICATION	Online fee payment page shows error after submitting
+APPLICATION	HR leave application not saving my leave request
+APPLICATION	Learning management system course page returns 500 error
+APPLICATION	Web application crashes when uploading assignment files
+APPLICATION	Exam results portal shows blank page for students
+APPLICATION	Mobile app for attendance not loading the timetable
+APPLICATION	E-commerce checkout fails and orders are not created
+APPLICATION	Ticket booking system double charging customers
+APPLICATION	Payroll application calculation wrong for overtime
+APPLICATION	Library website search page not responding
+APPLICATION	Admission portal form submit button does nothing
+APPLICATION	ERP purchase order module throws exception on approval
+APPLICATION	Hostel allotment application shows wrong room numbers
+APPLICATION	Online payment gateway declining all card transactions
+APPLICATION	Web portal session errors when navigating between pages
+APPLICATION	Billing system invoices generated with wrong amounts
+APPLICATION	Customer portal down with service unavailable message
+APPLICATION	Internal application API returning errors to the frontend
+APPLICATION	Transaction processing application stuck on pending
+APPLICATION	Grade submission portal not accepting marks from faculty
+STORAGE	Shared network drive is full and cannot save files
+STORAGE	Lost files on the department file share after sync
+STORAGE	OneDrive not syncing documents to the cloud folder
+STORAGE	Need more storage quota for my home directory
+STORAGE	External hard drive not recognised and files missing
+STORAGE	File server disk space low warning for research data
+STORAGE	Accidentally deleted folder needs restore from backup
+STORAGE	NAS storage array shows degraded RAID status
+STORAGE	Permission error when saving to the shared folder
+STORAGE	Mailbox storage full and cannot receive emails
+STORAGE	Storage volume for lab data unmounted after reboot
+STORAGE	SAN storage latency high for virtual machines
+STORAGE	Google Drive shared folder files disappeared
+STORAGE	Archive storage retrieval taking days for old records
+STORAGE	USB flash drive corrupted and asks to format
+STORAGE	Network attached storage unreachable from office computers
+STORAGE	Need a shared drive created for the new project team
+STORAGE	File versions overwritten on the shared storage
+STORAGE	Backup storage tape library reporting errors
+STORAGE	Disk quota exceeded on the student file storage
+STORAGE	Dropbox sync conflict creating duplicate files
+STORAGE	Video files too large to upload to departmental storage
+HARDWARE	Computer will not turn on and the power light stays off
+HARDWARE	Laptop overheating and shutting down by itself
+HARDWARE	Printer paper jam keeps happening on every print job
+HARDWARE	Broken keyboard on the reception computer
+HARDWARE	Monitor has dead pixels and lines across the screen
+HARDWARE	Laptop hinge broken and screen will not stay open
+HARDWARE	Printer toner cartridge empty in the finance office
+HARDWARE	Desktop computer beeps three times at startup and will not boot
+HARDWARE	Speakers in the lecture hall make crackling noise
+HARDWARE	Laptop charger not working and battery not charging
+HARDWARE	Mouse scroll wheel broken on lab computer
+HARDWARE	Projector bulb burnt out in classroom
+HARDWARE	Replacement laptop needed because the motherboard failed
+HARDWARE	Physical damage to the desktop tower after it fell
+HARDWARE	Printer drum needs replacing because pages are smudged
+HARDWARE	Laptop fan making grinding noise
+HARDWARE	Card reader device at the gate not reading ID cards
+HARDWARE	Computer screen stays black although the computer is on
+SOFTWARE	Application software crashes on startup after the update
+SOFTWARE	Office suite installation failed with an error message
+SOFTWARE	Need software installed on my laptop for the course
+SOFTWARE	Licence key not accepted for the installed software
+SOFTWARE	Program freezes and shows not responding
+SOFTWARE	Software update fails to download and install
+SOFTWARE	Excel formulas not calculating after upgrade to new version
+SOFTWARE	Operating system very slow after the latest patch
+SOFTWARE	Need to uninstall old software version and install new one
+SOFTWARE	Word processor shows compatibility mode error
+SOFTWARE	Driver installation failed for the graphics software
+SOFTWARE	Software licence renewal needed for the lab
+SOFTWARE	Desktop software reports missing dll file
+SOFTWARE	Installer says the software is not compatible with this version of Windows
+SOFTWARE	Antivirus software scan crashes the computer
+SOFTWARE	Plugin for the design software no longer loads after update
+SOFTWARE	Spreadsheet program closes unexpectedly when printing
+SOFTWARE	Browser crashes when opening the video lecture
+NETWORK	WiFi not working in the classroom block
+NETWORK	Internet connection very slow across the office
+NETWORK	Network down in the whole building
+NETWORK	Cannot connect to wifi on my phone or laptop
+NETWORK	VPN not connecting from outside the campus
+NETWORK	Wired network connection lost on all lab desktops
+NETWORK	Wifi password not accepted for the campus wireless network
+NETWORK	Network latency very high for remote users
+NETWORK	Access point blinking red and no wireless signal
+NETWORK	Internet access blocked on guest wifi
+NETWORK	Network connectivity intermittent in the conference room
+NETWORK	Router and modem lights off and no internet
+NETWORK	Cannot ping the gateway from office computers
+NETWORK	Wireless connection drops when moving between floors
+NETWORK	Network outage reported by many staff in the east wing
+NETWORK	Slow wifi speed makes video calls freeze
+NETWORK	LAN cable port dead at my desk
+NETWORK	VPN tunnel disconnects after a few minutes
+DATABASE	Database server down and applications cannot connect
+DATABASE	SQL query returning wrong data from the customer table
+DATABASE	Database connection pool exhausted on the main server
+DATABASE	Need database access granted for the analytics team
+DATABASE	Database performance very slow for all queries
+DATABASE	Table locked and updates waiting on the database
+DATABASE	Database record deleted by mistake needs restore
+DATABASE	Database schema update failed in production
+DATABASE	Index rebuild needed on the slow database table
+DATABASE	Database crashed with out of memory error
+DATABASE	Data import into the database table failed with errors
+DATABASE	Database replication broken between servers
+DATABASE	Query optimisation needed for slow SQL report
+DATABASE	Database login failing for the application service account
+DATABASE	Database table rows duplicated after migration
+DATABASE	NoSQL database cluster node unavailable
+DATABASE	Database archive job running for hours
+DATABASE	Primary key violation when inserting records into the database
+CLOUD	Cloud server instance stopped responding
+CLOUD	AWS EC2 instance unreachable after reboot
+CLOUD	Azure virtual machine deployment failed
+CLOUD	Cloud service region outage affecting our hosted applications
+CLOUD	Need access to the cloud console for my project
+CLOUD	Cloud billing account suspended and services stopped
+CLOUD	Kubernetes cluster nodes not ready in the cloud
+CLOUD	Cloud function deployment error in the pipeline
+CLOUD	Cloud load balancer health checks failing
+CLOUD	Virtual machine in the cloud running out of CPU credits
+CLOUD	Cloud resource quota exceeded for the subscription
+CLOUD	Cloud hosted container service keeps restarting
+CLOUD	AWS S3 bucket permissions misconfigured for the cloud app
+CLOUD	Google Cloud virtual machine SSH access denied
+CLOUD	Cloud platform migration of servers stuck
+CLOUD	Autoscaling not working for the cloud web servers
+CLOUD	Cloud provider maintenance caused instance downtime
+CLOUD	Cloud environment costs higher than expected this month
+SECURITY	Phishing email received asking to verify my account
+SECURITY	Computer infected with virus showing pop ups
+SECURITY	Malware alert from antivirus on my laptop
+SECURITY	Suspicious email attachment opened by mistake
+SECURITY	Possible hacking attempt detected on the web server
+SECURITY	Ransomware message demanding payment on the screen
+SECURITY	Security incident suspected unusual activity on network
+SECURITY	Report a phishing link sent to all students
+SECURITY	Virus spreading through shared USB drives in the lab
+SECURITY	Unauthorised access to confidential HR data
+SECURITY	Security breach of the student information leaked
+SECURITY	Malicious software installed without my knowledge
+SECURITY	Fake login page phishing for staff passwords
+SECURITY	Security vulnerability found in the public website
+SECURITY	Hacker gained access to an email account and sent spam
+SECURITY	Antivirus quarantined a trojan in downloads
+SECURITY	Suspicious network traffic flagged by intrusion detection
+SECURITY	Stolen laptop containing sensitive data
+SECURITY	Security audit required for compliance
+SECURITY	Spyware detected tracking keystrokes
+AUTHENTICATION	Cannot log in with my password
+AUTHENTICATION	Password reset request for my account
+AUTHENTICATION	Login page says invalid username or password
+AUTHENTICATION	Account locked out and need it unlocked
+AUTHENTICATION	Two step verification code not working at login
+AUTHENTICATION	Sign in fails with single sign on
+AUTHENTICATION	Forgot password for the student portal login
+AUTHENTICATION	Need to reset multi factor authentication device
+AUTHENTICATION	Login credentials not accepted after account migration
+AUTHENTICATION	Cannot sign in to the laptop with my domain account
+AUTHENTICATION	Password change required but the system rejects new password
+AUTHENTICATION	OTP not received by SMS for login
+AUTHENTICATION	Authentication failed error when connecting to email
+AUTHENTICATION	Account disabled message when signing in
+AUTHENTICATION	SSO redirect error at the login screen
+AUTHENTICATION	Login works on phone but not on laptop with same password
+APPLICATION	Web portal not loading for students
+APPLICATION	Application shows internal server error 500
+APPLICATION	Online payment transaction failed but money deducted
+APPLICATION	Payment application down and customers cannot pay
+APPLICATION	Registration portal crashes when submitting the form
+APPLICATION	Business application very slow to respond
+APPLICATION	App shows error page after clicking submit
+APPLICATION	Order management application not saving orders
+APPLICATION	Website application returns 404 not found for course pages
+APPLICATION	Attendance application marks everyone absent
+APPLICATION	Results application showing wrong grades
+APPLICATION	Booking application not sending confirmation
+APPLICATION	Mobile application crashes on opening
+APPLICATION	Portal timeout errors during peak usage
+APPLICATION	Expense claim application rejects valid receipts
+APPLICATION	Application feature broken after the latest release
+APPLICATION	Checkout page of the online store not working
+APPLICATION	Transactions failing in the payment portal
+STORAGE	Disk space full on the shared drive
+STORAGE	Cannot access files on the network drive
+STORAGE	Files missing from my shared folder
+STORAGE	Storage quota exceeded for my account
+STORAGE	Need to recover deleted files from storage backup
+STORAGE	File share very slow to open documents
+STORAGE	Cloud drive sync not uploading files
+STORAGE	Shared drive mapping missing on my computer
+STORAGE	Storage server disk failure alert
+STORAGE	Request more file storage space for the department
+STORAGE	Folder permissions on the file share need updating
+STORAGE	Large files cannot be copied to the network storage
+STORAGE	Home drive not available after login
+STORAGE	Backup of my files failed last night
+STORAGE	Storage capacity running out on the file server
+STORAGE	Document library on the shared drive is read only
+STORAGE	File restore needed from yesterday's snapshot
+STORAGE	USB storage device not mounting files

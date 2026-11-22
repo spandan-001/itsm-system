@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 
 import { dateTime, label } from '../api';
 import { useApiData } from '../useApiData';
+import { useAutoRefresh } from '../useAutoRefresh';
 import ActivityCard from './ActivityCard';
 import DashboardIcon from './DashboardIcon';
 
@@ -19,6 +20,11 @@ export default function MyIncidents({ request, account, overview = true }) {
   const unread = useApiData(request, overview ? '/notifications/unread-count' : null);
   const employee = account.role === 'EMPLOYEE';
   const { data, error, reload } = list;
+  useAutoRefresh(() => {
+    list.reload();
+    sla.reload();
+    unread.reload();
+  }, 30000);
   const title = employee ? 'My incidents' : 'Assigned incidents';
 
   return (
@@ -70,7 +76,10 @@ export default function MyIncidents({ request, account, overview = true }) {
                       <td className="incident-id">#{incident.id}</td>
                       <td><Link className="itsm-incident-link" to={`/incidents/${incident.id}`}>
                         <DashboardIcon name={categoryIcons[incident.category] ?? 'laptop'} />{incident.title}
-                      </Link></td>
+                      </Link>
+                        {incident.duplicateOfId && <span className="itsm-badge">linked to #{incident.duplicateOfId}</span>}
+                        {incident.awaitingReporterInfo && <span className="itsm-badge">{employee ? 'your reply needed' : 'waiting on reporter'}</span>}
+                      </td>
                       <td>{label(incident.category)}</td>
                       <td><span className={`priority ${incident.priority === 'P1' ? 'high' : ''}`}>{incident.priority}</span></td>
                       <td><span className={`status ${incident.status.toLowerCase().replaceAll('_', '-')}`}>{label(incident.status)}</span></td>

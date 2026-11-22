@@ -15,6 +15,7 @@ import com.itsm.enums.Priority;
 import com.itsm.enums.SlaState;
 import com.itsm.enums.SlaType;
 import com.itsm.event.SlaBreachedEvent;
+import com.itsm.event.SlaWarningEvent;
 import com.itsm.model.Incident;
 import com.itsm.model.SlaPolicy;
 import com.itsm.repository.IncidentRepository;
@@ -134,6 +135,44 @@ public class SlaService {
                 incident.markResolutionBreached();
                 eventPublisher.publishEvent(new SlaBreachedEvent(
                         incident, SlaType.RESOLUTION, incident.getResolutionDueAt()));
+                count++;
+            }
+        }
+        return count;
+    }
+
+    // ---- Early warnings ----
+
+    @Transactional
+    public int detectWarnings() {
+        return detectWarnings(LocalDateTime.now(clock));
+    }
+
+    /**
+     * Publishes one {@link SlaWarningEvent} per open clock that has used at least
+     * 75% of its window but has not breached yet. Each clock
+     * is warned about once.
+     */
+    @Transactional
+    public int detectWarnings(LocalDateTime now) {
+        int count = 0;
+        for (Long id : incidentRepository.findWarningCandidateIds()) {
+            var candidate = incidentRepository.findLockedById(id);
+            if (candidate.isEmpty()) {
+                continue;
+            }
+            Incident incident = candidate.get();
+            LocalDateTime start = incident.getCreatedAt();
+            if (!incident.isResponseWarned() && state(start, incident.getResponseDueAt(),
+                    incident.getRespondedAt(), incident.isResponseBreached(), now) == SlaState.AT_RISK) {
+                incident.markResponseWarned();
+                eventPublisher.publishEvent(new SlaWarningEvent(incident, SlaType.RESPONSE, incident.getResponseDueAt()));
+                count++;
+            }
+            if (!incident.isResolutionWarned() && state(start, incident.getResolutionDueAt(),
+                    incident.getResolvedAt(), incident.isResolutionBreached(), now) == SlaState.AT_RISK) {
+                incident.markResolutionWarned();
+                eventPublisher.publishEvent(new SlaWarningEvent(incident, SlaType.RESOLUTION, incident.getResolutionDueAt()));
                 count++;
             }
         }
