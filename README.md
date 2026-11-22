@@ -75,10 +75,10 @@ docs/           Design notes and API reference
 
 ## Run the shared demo on your laptop
 
-The shared demo uses the existing Supabase database, even when the website runs on your laptop. Install Java 21 and Node 24 or later. Clone the integration branch once.
+The shared demo uses the existing Supabase database, even when the website runs on your laptop. Install Java 21 and Node 24 or later. Clone the repository once.
 
 ```bash
-git clone --branch codex/itsm-integration https://github.com/spandan-001/itsm-system.git
+git clone https://github.com/spandan-001/itsm-system.git
 cd itsm-system
 ```
 
