@@ -64,7 +64,7 @@ Send the bearer token with API requests. A valid token with insufficient privile
 Configure administrative access with `ITSM_ADMIN_USER_IDS`, a comma-separated
 list of approved Supabase user UUIDs. The default list is empty. Administration
 covers manual routing, global audit, analytics, SLA policy updates, strategy
-selection, technician management, and duplicate-management endpoints.
+selection (the assignment strategy also from the admin dashboard), technician management, and duplicate-management endpoints.
 
 
 The admin dashboard uses `GET /api/admin/incidents` with the same pagination

@@ -26,7 +26,7 @@ A course project for CS F213 (Object-Oriented Programming). The system tracks IT
 1. **Priority calculation.** Priority (P1–P4) comes from impact, urgency, how critical the affected services are, and how many users are affected. There are two strategies, and you can switch between them while the app runs.
 2. **Category classification.** A Naive Bayes classifier, written from scratch, suggests a category and corrects wrong ones it is confident about. It reaches 82% five-fold cross-validated accuracy and retrains whenever an incident closes.
 3. **Duplicate detection.** Cosine text similarity links new reports to an open incident that matches.
-4. **Smart routing.** Technicians are scored on skill match, spare capacity and experience. If nobody suitable is free, the incident is queued and retried.
+4. **Smart routing.** Technicians are scored on skill match, spare capacity and experience. If nobody suitable is free, the incident is queued and retried. Administrators can switch between skill-based, load-balanced and smart routing from the admin dashboard while the app runs.
 5. **Suggested resolutions.** Technicians see how the most similar past incidents were fixed.
 6. **Outage detection.** Three or more reports on one service within 30 minutes open a suspected outage, and operations are alerted.
 7. **Automatic escalation.** An unacknowledged P1 or P2 incident goes to the Team Lead, then the System Administrator, then the IT Manager.
@@ -39,7 +39,7 @@ A course project for CS F213 (Object-Oriented Programming). The system tracks IT
 - **Notifications:** in-app and simulated email.
 - **Incident thread:** notes, requests for more information, and reporter feedback.
 - **Search:** filter incidents by several criteria at once.
-- **Admin dashboard:** a live view with analytics charts.
+- **Admin dashboard:** a live view with analytics charts, manual reassignment, an assignment-strategy switch and user creation.
 
 ## Design
 
@@ -148,7 +148,7 @@ For the frontend, run `npm run lint` and `npm run build`. GitHub Actions runs th
 | `itsm.sla.check-interval-ms` | `60000` | How often the SLA monitor runs |
 | `ITSM_ADMIN_USER_IDS` | (empty) | Supabase user IDs that get administrator access, separated by commas |
 
-Strategies and classifier settings can also be changed at runtime through the admin API. See [`docs/incident-api.md`](docs/incident-api.md).
+The assignment strategy can also be changed at runtime from the admin dashboard (**Assignment strategy** → **Change strategy**). The priority strategy and the classifier settings can be changed at runtime through the admin API; see [`docs/incident-api.md`](docs/incident-api.md). A runtime switch lasts until the server restarts, which goes back to the defaults above.
 
 ## Documentation
 

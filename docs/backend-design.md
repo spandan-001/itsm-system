@@ -32,7 +32,7 @@ Every change publishes an `IncidentEvent`. Observers write the audit trail, send
 | **Repository** | `repository/*` | Spring Data JPA hides persistence; `JpaSpecificationExecutor` for dynamic search. |
 | **Registry / Generics** | `strategy/StrategyRegistry<T extends NamedStrategy>` | One generic class switches both strategy families at runtime. |
 
-Strategies can be switched live, which is handy in the demo: `PUT /api/strategies/assignment/load`.
+Strategies can be switched live. Administrators change the assignment strategy from the admin dashboard's **Assignment strategy** control (skill, load or smart), which calls `PUT /api/strategies/assignment/{name}`; the priority strategy is switched through `PUT /api/strategies/priority/{name}`. A switch is held in memory by `StrategyRegistry` and lasts until the server restarts, when the configured defaults apply again.
 
 ## OOP principles
 
