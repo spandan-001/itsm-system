@@ -34,6 +34,11 @@ export default function AdminDashboard({ request }) {
   const audit = useApiData(request, '/audit?size=5');
   const outages = useApiData(request, '/outages');
   const atRisk = useApiData(request, '/sla/at-risk');
+  const strategies = useApiData(request, '/strategies');
+  const [savedAssignment, setSavedAssignment] = useState(null);
+  const assignment = savedAssignment ?? strategies.data?.assignment;
+  const [savingStrategy, setSavingStrategy] = useState(false);
+  const [strategyFailure, setStrategyFailure] = useState('');
   const [live, setLive] = useState(true);
   const [updatedAt, setUpdatedAt] = useState(() => new Date());
 
@@ -46,7 +51,29 @@ export default function AdminDashboard({ request }) {
     atRisk.reload();
     setUpdatedAt(new Date());
   }
+
   useAutoRefresh(reloadAll, 15000, live);
+
+  function refreshDashboard() {
+    reloadAll();
+    strategies.reload();
+    setSavedAssignment(null);
+  }
+
+  async function changeStrategy(event) {
+    event.preventDefault();
+    const name = new FormData(event.currentTarget).get('strategy');
+    setSavingStrategy(true);
+    setStrategyFailure('');
+    try {
+      const updated = await request(`/strategies/assignment/${encodeURIComponent(name)}`, { method: 'PUT' });
+      setSavedAssignment(updated);
+    } catch (error) {
+      setStrategyFailure(error.message);
+    } finally {
+      setSavingStrategy(false);
+    }
+  }
 
   async function assign(id, technicianId) {
     if (!technicianId) return;
@@ -72,8 +99,8 @@ export default function AdminDashboard({ request }) {
         <div className="itsm-live">
           <label><input type="checkbox" checked={live} onChange={e => setLive(e.target.checked)} /> Live updates (every 15 s)</label>
           <small>Updated {updatedAt.toLocaleTimeString()}</small>
-      <CreateUser request={request} categories={categories} />
-          <button type="button" className="itsm-button secondary" onClick={reloadAll}>Refresh</button>
+          <CreateUser request={request} categories={categories} />
+          <button type="button" className="itsm-button secondary" onClick={refreshDashboard}>Refresh</button>
         </div>
       </header>
       {(failure || error) && <p role="alert">{failure || error.message}</p>}
@@ -102,6 +129,28 @@ export default function AdminDashboard({ request }) {
             <button type="button" className="itsm-button secondary"
               onClick={() => { setFilters(emptyFilters); setKeyword(''); setPage(0); }}>Clear filters</button>
           </div>
+          {assignment ? (
+            <form className="assignment-strategy" onSubmit={changeStrategy}>
+              <div>
+                <label htmlFor="assignment-strategy">Assignment strategy</label>
+                <small role="status">Active: {label(assignment.active)}</small>
+              </div>
+              <div className="assignment-strategy-controls">
+                <select id="assignment-strategy" name="strategy" key={assignment.active}
+                  defaultValue={assignment.active} disabled={savingStrategy}>
+                  {assignment.available.map(option => (
+                    <option key={option.name} value={option.name}>{label(option.name)}</option>
+                  ))}
+                </select>
+                <button type="submit" className="itsm-button secondary" disabled={savingStrategy}>
+                  {savingStrategy ? 'Saving…' : 'Change strategy'}
+                </button>
+              </div>
+            </form>
+          ) : !strategies.error && <p role="status">Loading assignment strategies…</p>}
+          {(strategyFailure || strategies.error) && (
+            <p role="alert">{strategyFailure || strategies.error.message}</p>
+          )}
           <div className="incident-filter-grid">
             <label>Search <input type="search" placeholder="Search incidents" value={keyword} onChange={e => { setKeyword(e.target.value); setPage(0); }} /></label>
 

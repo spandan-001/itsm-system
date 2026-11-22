@@ -79,3 +79,20 @@ li:hover > .itsm-chart-tip, li:focus-visible > .itsm-chart-tip { opacity: 1; }
 
 .itsm-live { display: flex; flex-wrap: wrap; align-items: center; gap: .75rem; }
 .itsm-live small { color: var(--itsm-muted); }
+
+.assignment-strategy {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: .75rem 1rem;
+  margin: 0 1.25rem 1rem;
+  padding: .75rem 1rem;
+  border: 1px solid var(--itsm-border, #dce4dc);
+  border-radius: .75rem;
+}
+
+.assignment-strategy label { display: block; font-weight: 600; }
+.assignment-strategy small { display: block; color: var(--itsm-muted); }
+.assignment-strategy-controls { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; }
+.assignment-strategy-controls select { min-width: 7rem; min-height: 2.5rem; padding: .35rem .65rem; }
